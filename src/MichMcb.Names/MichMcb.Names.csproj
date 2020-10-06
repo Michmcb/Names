@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Platforms>AnyCPU;x64</Platforms>
+    <Nullable>enable</Nullable>
+    <Version>0.1</Version>
+    <PackageIcon>Ghost.png</PackageIcon>
+    <Description>A small library I use personally to help categorize files and directories with attributes. Useful when you need to attach metadata to files/directories but don't want an extra file. Instead you can embed the metadata directly into the filename.</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/Michmcb/Names</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Michmcb/Names</RepositoryUrl>
+    <RepositoryType>Github</RepositoryType>
+    <PackageTags>naming metadata filename</PackageTags>
+    <PackageReleaseNotes>- Initial Release</PackageReleaseNotes>
+	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningsAsErrors>NU1605</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="..\Ghost.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

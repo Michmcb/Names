@@ -1,0 +1,10 @@
+﻿[*.cs]
+
+# CS8766: Nullability of reference types in return type doesn't match implicitly implemented member (possibly because of nullability attributes).
+dotnet_diagnostic.CS8766.severity = error
+
+# CS8625: Cannot convert null literal to non-nullable reference type.
+dotnet_diagnostic.CS8625.severity = error
+
+# CS8601: Possible null reference assignment.
+dotnet_diagnostic.CS8601.severity = error
