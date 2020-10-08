@@ -112,7 +112,7 @@
 				return string.Empty;
 			}
 			StringBuilder sb = new StringBuilder();
-			AppendTo(NameRules.Default, sb);
+			AppendTo(sb, NameRules.Default);
 			return sb.ToString();
 		}
 		/// <summary>
@@ -127,7 +127,7 @@
 				return string.Empty;
 			}
 			StringBuilder sb = new StringBuilder();
-			AppendTo(rules, sb);
+			AppendTo(sb, rules);
 			return sb.ToString();
 		}
 		/// <summary>
@@ -143,7 +143,7 @@
 			}
 			StringBuilder sb = new StringBuilder();
 			sb.Append(prefix);
-			AppendTo(rules, sb);
+			AppendTo(sb, rules);
 			return sb.ToString();
 		}
 		/// <summary>
@@ -153,14 +153,14 @@
 		/// <returns><paramref name="sb"/></returns>
 		public StringBuilder AppendTo(StringBuilder sb)
 		{
-			return AppendTo(NameRules.Default, sb);
+			return AppendTo(sb, NameRules.Default);
 		}
 		/// <summary>
 		/// Appends this as a string to <paramref name="sb"/>, using <paramref name="rules"/>.
 		/// </summary>
 		/// <param name="sb">The StringBuilder to which the resultant string is appended</param>
 		/// <returns><paramref name="sb"/></returns>
-		public StringBuilder AppendTo(NameRules rules, StringBuilder sb)
+		public StringBuilder AppendTo(StringBuilder sb, NameRules rules)
 		{
 			if (!isEmpty)
 			{
@@ -264,7 +264,7 @@
 							group = new string(token.Slice(2));
 							break;
 						case 'd':
-							Parsing.ParseDateTimeFragment(token.Slice(2), out _, out dateTime);
+							Parsing.ParseDateTimeFragment(token.Slice(2), out dateTime);
 							break;
 						case 'f':
 							favourite = token[2];

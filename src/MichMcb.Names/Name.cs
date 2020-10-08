@@ -6,7 +6,7 @@
 	/// <summary>
 	/// Represents a single Name, with only a Title, Attributes, and Suffix.
 	/// </summary>
-	public class Name : IEquatable<Name>, IName
+	public sealed class Name : IEquatable<Name>, IName
 	{
 		/// <summary>
 		/// The Title
@@ -20,47 +20,72 @@
 		/// The Suffix that will get appended to this Name on invoking .ToString()
 		/// </summary>
 		public string Suffix { get; set; }
-		public Name() : this(null, Attributes.Empty, string.Empty) { }
-		public Name(string? title, Attributes attributes, string suffix)
+		/// <summary>
+		/// Creates a new instance with a null title, empty suffix, and empty Attributes (<see cref="Attributes.Empty"/>)
+		/// </summary>
+		public Name() : this(null, string.Empty, Attributes.Empty) { }
+		/// <summary>
+		/// Creates a new instance with the provided parameters.
+		/// </summary>
+		public Name(string? title, string suffix, Attributes attributes)
 		{
 			Attributes = attributes;
 			Title = title;
 			Suffix = suffix;
 		}
 		/// <summary>
-		/// Writes this Name as a string according to this Name's RuleSet
+		/// Turns this Name into a string using rules <see cref="NameRules.Default"/>.
 		/// </summary>
 		public override string ToString()
 		{
 			StringBuilder sb = new StringBuilder();
-			return AppendTo(NameRules.Default, sb).ToString();
+			return AppendTo(sb, NameRules.Default).ToString();
 		}
+		/// <summary>
+		/// Turns this Name into a string using the provided <paramref name="rules"/>.
+		/// </summary>
+		/// <param name="rules">The rules to use</param>
 		public string ToString(NameRules rules)
 		{
 			StringBuilder sb = new StringBuilder();
-			return AppendTo(rules, sb).ToString();
+			return AppendTo(sb, rules).ToString();
 		}
+		/// <summary>
+		/// Turns this Name into a string using the provided <paramref name="rules"/>.
+		/// Prefixes the resultant string with <paramref name="prefix"/>.
+		/// </summary>
+		/// <param name="rules">The rules to use</param>
+		/// <param name="prefix">The prefix to prepend</param>
 		public string ToString(NameRules rules, in ReadOnlySpan<char> prefix)
 		{
 			StringBuilder sb = new StringBuilder();
 			sb.Append(prefix);
-			return AppendTo(rules, sb).ToString();
+			return AppendTo(sb, rules).ToString();
 		}
-		public StringBuilder AppendTo(StringBuilder sb)
+		/// <summary>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using <see cref="NameRules.Default"/>.
+		/// </summary>
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
+		/// <returns><paramref name="stringBuilder"/></returns>
+		public StringBuilder AppendTo(StringBuilder stringBuilder)
 		{
-			return AppendTo(NameRules.Default, sb);
+			return AppendTo(stringBuilder, NameRules.Default);
 		}
-		public StringBuilder AppendTo(NameRules rules, StringBuilder sb)
+		/// <summary>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using the provided <paramref name="rules"/>.
+		/// </summary>
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
+		/// <param name="rules">The rules to use</param>
+		/// <returns><paramref name="stringBuilder"/></returns>
+		public StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
 		{
-			sb.Append(Title);
-			Attributes.AppendTo(sb);
-			sb.Append(Suffix);
-			return sb;
+			stringBuilder.Append(Title);
+			Attributes.AppendTo(stringBuilder, rules);
+			stringBuilder.Append(Suffix);
+			return stringBuilder;
 		}
 		/// <summary>
 		/// Parses a string as a Name.
-		/// Equivalent to calling TryParse(s, out Name name);
-		/// If the string does not adhere to the rules of the NameRuleSet, this method returns false.
 		/// </summary>
 		/// <param name="s">The string to parse</param>
 		/// <param name="name">The parsed name</param>
@@ -72,13 +97,16 @@
 				return false;
 			}
 
-			name = new Name(null, Attributes.Empty, string.Empty);
+			name = new Name(null, string.Empty, Attributes.Empty);
 			if (Parsing.ParseTitleAttributeSuffixFragment(s, name))
 			{
 				return true;
 			}
 			return false;
 		}
+		/// <summary>
+		/// Equality based on <see cref="Title"/>
+		/// </summary>
 		public static bool operator ==(Name? lhs, Name? rhs)
 		{
 			// Check for null on left side.
@@ -95,10 +123,16 @@
 			}
 			return lhs.Equals(rhs);
 		}
+		/// <summary>
+		/// Inequality based on <see cref="Title"/>
+		/// </summary>
 		public static bool operator !=(Name? lhs, Name? rhs)
 		{
 			return !(lhs == rhs);
 		}
+		/// <summary>
+		/// Equality based on <see cref="Title"/>
+		/// </summary>
 		public override bool Equals(object? obj)
 		{
 			// If obj is null, false
@@ -117,6 +151,9 @@
 			}
 			return false;
 		}
+		/// <summary>
+		/// Equality based on <see cref="Title"/>
+		/// </summary>
 		public bool Equals(Name? rhs)
 		{
 			// If obj is null, false
@@ -132,6 +169,9 @@
 			// If rhs is not null, we can compare
 			return Title == rhs.Title;
 		}
+		/// <summary>
+		/// Hashcode based on <see cref="Title"/>
+		/// </summary>
 		public override int GetHashCode()
 		{
 			return HashCode.Combine(Title);

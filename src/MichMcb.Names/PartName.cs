@@ -5,13 +5,25 @@
 	using System.Text;
 
 	/// <summary>
-	/// Represents a single Name. Note that for when comparing, only the parts affect equality and comparison.
+	/// Represents a single Name which can contain digits indicating some sort of order.
 	/// </summary>
-	public class PartName : IComparable, IComparable<PartName>, IEquatable<PartName>, IName
+	public sealed class PartName : IComparable, IComparable<PartName>, IEquatable<PartName>, IName
 	{
+		/// <summary>
+		/// If a part is set to this value, it will be omitted when turning this into a string
+		/// </summary>
 		public const int None = -1;
+		/// <summary>
+		/// First part
+		/// </summary>
 		public int TopPart { get; set; }
+		/// <summary>
+		/// Second part
+		/// </summary>
 		public int MidPart { get; set; }
+		/// <summary>
+		/// Third party
+		/// </summary>
 		public int BottomPart { get; set; }
 		/// <summary>
 		/// The Title
@@ -25,8 +37,14 @@
 		/// The Suffix that will get appended to this Name on invoking .ToString()
 		/// </summary>
 		public string Suffix { get; set; }
-		public PartName() : this(null, None, None, None, Attributes.Empty, string.Empty) { }
-		public PartName(string? title, int topPart, int midPart, int bottomPart, Attributes attributes, string suffix)
+		/// <summary>
+		/// Creates a new instance with a null title, all parts set to <see cref="None"/>, empty suffix, and empty Attributes (<see cref="Attributes.Empty"/>)
+		/// </summary>
+		public PartName() : this(null, None, None, None, string.Empty, Attributes.Empty) { }
+		/// <summary>
+		/// Creates a new instance with the provided parameters.
+		/// </summary>
+		public PartName(string? title, int topPart, int midPart, int bottomPart, string suffix, Attributes attributes)
 		{
 			TopPart = topPart;
 			MidPart = midPart;
@@ -35,46 +53,73 @@
 			Suffix = suffix;
 			Title = title;
 		}
+		/// <summary>
+		/// Turns this Name into a string using rules <see cref="NameRules.Default"/>.
+		/// </summary>
 		public override string ToString()
 		{
 			StringBuilder sb = new StringBuilder();
-			return AppendTo(NameRules.Default, sb).ToString();
+			return AppendTo(sb, NameRules.Default).ToString();
 		}
+		/// <summary>
+		/// Turns this Name into a string using the provided <paramref name="rules"/>.
+		/// </summary>
+		/// <param name="rules">The rules to use</param>
 		public string ToString(NameRules rules)
 		{
 			StringBuilder sb = new StringBuilder();
-			return AppendTo(rules, sb).ToString();
+			return AppendTo(sb, rules).ToString();
 		}
+		/// <summary>
+		/// Turns this Name into a string using the provided <paramref name="rules"/>.
+		/// Prefixes the resultant string with <paramref name="prefix"/>.
+		/// </summary>
+		/// <param name="rules">The rules to use</param>
+		/// <param name="prefix">The prefix to prepend</param>
 		public string ToString(NameRules rules, in ReadOnlySpan<char> prefix)
 		{
 			StringBuilder sb = new StringBuilder();
 			sb.Append(prefix);
-			return AppendTo(rules, sb).ToString();
+			return AppendTo(sb, rules).ToString();
 		}
-		public StringBuilder AppendTo(StringBuilder sb)
+		/// <summary>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using <see cref="NameRules.Default"/>.
+		/// </summary>
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
+		/// <returns><paramref name="stringBuilder"/></returns>
+		public StringBuilder AppendTo(StringBuilder stringBuilder)
 		{
-			return AppendTo(NameRules.Default, sb);
+			return AppendTo(stringBuilder, NameRules.Default);
 		}
-		public StringBuilder AppendTo(NameRules rules, StringBuilder sb)
+		/// <summary>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using the provided <paramref name="rules"/>.
+		/// </summary>
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
+		/// <param name="rules">The rules to use</param>
+		/// <returns><paramref name="stringBuilder"/></returns>
+		public StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
 		{
 			if (TopPart != None)
 			{
-				sb.Append(Formatting.PartDelim + TopPart.ToString(rules.TopPartFormat));
+				stringBuilder.Append(Formatting.PartDelim + TopPart.ToString(rules.TopPartFormat));
 			}
 			if (MidPart != None)
 			{
-				sb.Append(Formatting.PartDelim + MidPart.ToString(rules.MidPartFormat));
+				stringBuilder.Append(Formatting.PartDelim + MidPart.ToString(rules.MidPartFormat));
 			}
 			if (BottomPart != None)
 			{
-				sb.Append(Formatting.PartDelim + BottomPart.ToString(rules.BottomPartFormat));
+				stringBuilder.Append(Formatting.PartDelim + BottomPart.ToString(rules.BottomPartFormat));
 			}
 
-			sb.Append(!string.IsNullOrEmpty(Title) ? (TopPart != None || MidPart != None || BottomPart != None) ? Formatting.TitleDelim + Title : Title : null);
-			Attributes.AppendTo(sb);
-			sb.Append(Suffix);
-			return sb;
+			stringBuilder.Append(!string.IsNullOrEmpty(Title) ? (TopPart != None || MidPart != None || BottomPart != None) ? Formatting.TitleDelim + Title : Title : null);
+			Attributes.AppendTo(stringBuilder, rules);
+			stringBuilder.Append(Suffix);
+			return stringBuilder;
 		}
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// </summary>
 		public static bool operator <(PartName? lhs, PartName? rhs)
 		{
 			if (!(lhs is null) && !(rhs is null))
@@ -86,6 +131,9 @@
 				return false;
 			}
 		}
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// </summary>
 		public static bool operator <=(PartName? lhs, PartName? rhs)
 		{
 			if (!(lhs is null) && !(rhs is null))
@@ -97,6 +145,9 @@
 				return false;
 			}
 		}
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// </summary>
 		public static bool operator >(PartName? lhs, PartName? rhs)
 		{
 			if (!(lhs is null) && !(rhs is null))
@@ -108,6 +159,9 @@
 				return false;
 			}
 		}
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// </summary>
 		public static bool operator >=(PartName? lhs, PartName? rhs)
 		{
 			if (!(lhs is null) && !(rhs is null))
@@ -119,6 +173,9 @@
 				return false;
 			}
 		}
+		/// <summary>
+		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
+		/// </summary>
 		public static bool operator ==(PartName? lhs, PartName? rhs)
 		{
 			// Check for null on left side.
@@ -135,10 +192,16 @@
 			}
 			return lhs.Equals(rhs);
 		}
+		/// <summary>
+		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
+		/// </summary>
 		public static bool operator !=(PartName? lhs, PartName? rhs)
 		{
 			return !(lhs == rhs);
 		}
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// </summary>
 		public int CompareTo(PartName? other)
 		{
 			if (other is null)
@@ -161,6 +224,9 @@
 				}
 			}
 		}
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// </summary>
 		public int CompareTo(object obj)
 		{
 			if (obj is PartName name)
@@ -172,6 +238,9 @@
 				throw new ArgumentException("Not a " + nameof(PartName));
 			}
 		}
+		/// <summary>
+		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
+		/// </summary>
 		public override bool Equals(object? obj)
 		{
 			// If obj is null, false
@@ -192,6 +261,9 @@
 			}
 			return false;
 		}
+		/// <summary>
+		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
+		/// </summary>
 		public bool Equals(PartName? rhs)
 		{
 			// If obj is null, false
@@ -207,6 +279,9 @@
 			// If rhs is not null, we can compare. Only equal if all numerical properties are equal.
 			return TopPart == rhs.TopPart && MidPart == rhs.MidPart && BottomPart == rhs.BottomPart;
 		}
+		/// <summary>
+		/// Hashcode based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
+		/// </summary>
 		public override int GetHashCode()
 		{
 			return HashCode.Combine(TopPart, MidPart, BottomPart);
@@ -302,7 +377,7 @@
 					else
 					{
 						first = int.Parse(s[from..]);
-						name = new PartName(null, first, None, None, Attributes.Empty, string.Empty);
+						name = new PartName(null, first, None, None, string.Empty, Attributes.Empty);
 						return true;
 					}
 				}
@@ -329,7 +404,7 @@
 					else
 					{
 						second = int.Parse(s[from..]);
-						name = new PartName(null, first, second, None, Attributes.Empty, string.Empty);
+						name = new PartName(null, first, second, None, string.Empty, Attributes.Empty);
 						return true;
 					}
 				}
@@ -356,7 +431,7 @@
 					else
 					{
 						third = int.Parse(s[from..]);
-						name = new PartName(null, first, second, third, Attributes.Empty, string.Empty);
+						name = new PartName(null, first, second, third, string.Empty, Attributes.Empty);
 						return true;
 					}
 				}
@@ -368,7 +443,7 @@
 				++i;
 			}
 
-			name = new PartName(null, first, second, third, Attributes.Empty, string.Empty);
+			name = new PartName(null, first, second, third, string.Empty, Attributes.Empty);
 			if (!Parsing.ParseTitleAttributeSuffixFragment(s.Slice(i), name))
 			{
 				return false;

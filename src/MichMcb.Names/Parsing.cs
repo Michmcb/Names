@@ -1,91 +1,91 @@
 ﻿namespace MichMcb.Names
 {
 	using System;
+	/// <summary>
+	/// Parses stuff
+	/// </summary>
 	public static class Parsing
 	{
+		/// <summary>
+		/// Callback to help iterate through series of spans (since you can't yield ref structs)
+		/// </summary>
+		/// <param name="str">The span</param>
+		/// <param name="go">Set to false to stop</param>
 		public delegate void SpanString(in ReadOnlySpan<char> str, ref bool go);
 		/// <summary>
-		/// Parses a DateTime fragment according to the provided rules.
+		/// Parses a DateTime fragment
 		/// </summary>
-		/// <param name="s">The string containing the DateTime fragment to parse</param>
-		/// <param name="i">This will be set to 1 past the parsed DateTime fragment</param>
+		/// <param name="str">The string containing the DateTime fragment to parse</param>
 		/// <param name="dateTime">If successful, the parsed DateTime. Otherwise, DateTime.MinValue</param>
-		public static bool ParseDateTimeFragment(in ReadOnlySpan<char> s, out int i, out DateTime dateTime)
+		public static bool ParseDateTimeFragment(in ReadOnlySpan<char> str, out DateTime dateTime)
 		{
 			dateTime = DateTime.MinValue;
 			// The order HAS to be year, month, day, hour, minute, second.
 			int month = 1, day = 1, hour = 0, minute = 0, second = 0;
 			// The reason why I'm using goto here is because I didn't want to indent this like crazy and have a huge "Arrow" code.
 			int startFrom = 0;
-			i = 0;
 
 			// Year; 4 chars
-			if (s.Length < startFrom + 4)
+			if (str.Length < startFrom + 4)
 			{
 				return false;
 			}
-			if (!int.TryParse(s.Slice(startFrom, 4), out int year))
+			if (!int.TryParse(str.Slice(startFrom, 4), out int year))
 			{
 				return false;
 			}
 			// Month; delimiter and 2 chars
-			if (s.Length < startFrom + 6 || (s[startFrom + 4] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 6 || (str[startFrom + 4] != Formatting.TimeUnitDelim))
 			{
-				i = 4;
 				goto doneParsingDate;
 			}
-			if (!int.TryParse(s.Slice(startFrom + 5, 2), out month))
+			if (!int.TryParse(str.Slice(startFrom + 5, 2), out month))
 			{
 				return false;
 			}
 			// Day; delimiter and 2 chars
-			if (s.Length < startFrom + 9 || (s[startFrom + 7] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 9 || (str[startFrom + 7] != Formatting.TimeUnitDelim))
 			{
-				i = 7;
 				goto doneParsingDate;
 			}
-			if (!int.TryParse(s.Slice(startFrom + 8, 2), out day))
+			if (!int.TryParse(str.Slice(startFrom + 8, 2), out day))
 			{
 				return false;
 			}
 			// Hour; delimiter and 2 chars
-			if (s.Length < startFrom + 12 || (s[startFrom + 10] != Formatting.DateAndTimeDelim))
+			if (str.Length < startFrom + 12 || (str[startFrom + 10] != Formatting.DateAndTimeDelim))
 			{
-				i = 10;
 				goto doneParsingDate;
 			}
-			if (!int.TryParse(s.Slice(startFrom + 11, 2), out hour))
+			if (!int.TryParse(str.Slice(startFrom + 11, 2), out hour))
 			{
 				return false;
 			}
 			// Minute; delimiter and 2 chars
-			if (s.Length < startFrom + 15 || (s[startFrom + 13] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 15 || (str[startFrom + 13] != Formatting.TimeUnitDelim))
 			{
-				i = 13;
 				goto doneParsingDate;
 			}
-			if (!int.TryParse(s.Slice(startFrom + 14, 2), out minute))
+			if (!int.TryParse(str.Slice(startFrom + 14, 2), out minute))
 			{
 				return false;
 			}
 			// Second; delimiter and 2 chars
-			if (s.Length < startFrom + 18 || (s[startFrom + 16] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 18 || (str[startFrom + 16] != Formatting.TimeUnitDelim))
 			{
-				i = 16;
 				goto doneParsingDate;
 			}
-			if (!int.TryParse(s.Slice(startFrom + 17, 2), out second))
+			if (!int.TryParse(str.Slice(startFrom + 17, 2), out second))
 			{
 				return false;
 			}
-			i = 19;
 
 		doneParsingDate:
 			dateTime = new DateTime(year, month, day, hour, minute, second, DateTimeKind.Local);
 			return true;
 		}
 		/// <summary>
-		/// Parses a string fragment according to the provided rules, to extract a Title, Attributes, and Suffix.
+		/// Parses a string fragment to extract a Title, Attributes, and Suffix.
 		/// These are then set on <paramref name="name"/>
 		/// </summary>
 		public static bool ParseTitleAttributeSuffixFragment(in ReadOnlySpan<char> str, IName name)

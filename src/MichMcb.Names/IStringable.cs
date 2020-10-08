@@ -8,30 +8,33 @@
 	public interface IStringable
 	{
 		/// <summary>
-		/// Writes using default rules
+		/// Turns this into a string using rules <see cref="NameRules.Default"/>.
 		/// </summary>
 		string ToString();
 		/// <summary>
-		/// Writes using the rules provided
+		/// Turns this into a string using the provided <paramref name="rules"/>.
 		/// </summary>
 		/// <param name="rules">The rules to use</param>
 		string ToString(NameRules rules);
 		/// <summary>
-		/// Writes using the rules provided, with <paramref name="prefix"/> prepended.
+		/// Turns this into a string using the provided <paramref name="rules"/>.
+		/// Prefixes the resultant string with <paramref name="prefix"/>.
 		/// </summary>
 		/// <param name="rules">The rules to use</param>
-		/// <param name="prefix">The prefix to append to the resultant string</param>
+		/// <param name="prefix">The prefix to prepend</param>
 		string ToString(NameRules rules, in ReadOnlySpan<char> prefix);
 		/// <summary>
-		/// Writes using default rules to <paramref name="sb"/>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using <see cref="NameRules.Default"/>.
 		/// </summary>
-		/// <param name="sb">The StringBuilder to write the name to</param>
-		StringBuilder AppendTo(StringBuilder sb);
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
+		/// <returns><paramref name="stringBuilder"/></returns>
+		StringBuilder AppendTo(StringBuilder stringBuilder);
 		/// <summary>
-		/// Writes using the rules provided to <paramref name="sb"/>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using the provided <paramref name="rules"/>.
 		/// </summary>
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
 		/// <param name="rules">The rules to use</param>
-		/// <param name="sb">The StringBuilder to write the name to</param>
-		StringBuilder AppendTo(NameRules rules, StringBuilder sb);
+		/// <returns><paramref name="stringBuilder"/></returns>
+		public StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules);
 	}
 }

@@ -6,6 +6,9 @@
 	/// </summary>
 	public sealed class NameRules
 	{
+		/// <summary>
+		/// The default rules to use if none are specified. These can be changed.
+		/// </summary>
 		public static readonly NameRules Default = new NameRules();
 		public int TopPartDigits
 		{
@@ -46,7 +49,7 @@
 		public string TopPartFormat { get; private set; }
 		public string MidPartFormat { get; private set; }
 		public string BottomPartFormat { get; private set; }
-		public string DateFormat { get; private set; }
+		public string DateFormat { get; set; }
 		private NameRules() : this(2, 2, 2, Formatting.YearMonthDay) { }
 		/// <summary>
 		/// Creates a new NameRuleSet with the rules provided
