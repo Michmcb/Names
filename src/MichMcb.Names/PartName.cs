@@ -101,18 +101,18 @@
 		{
 			if (TopPart != None)
 			{
-				stringBuilder.Append(Formatting.PartDelim + TopPart.ToString(rules.TopPartFormat));
+				stringBuilder.Append(rules.PartDelim + TopPart.ToString(rules.TopPartFormat));
 			}
 			if (MidPart != None)
 			{
-				stringBuilder.Append(Formatting.PartDelim + MidPart.ToString(rules.MidPartFormat));
+				stringBuilder.Append(rules.PartDelim + MidPart.ToString(rules.MidPartFormat));
 			}
 			if (BottomPart != None)
 			{
-				stringBuilder.Append(Formatting.PartDelim + BottomPart.ToString(rules.BottomPartFormat));
+				stringBuilder.Append(rules.PartDelim + BottomPart.ToString(rules.BottomPartFormat));
 			}
 
-			stringBuilder.Append(!string.IsNullOrEmpty(Title) ? (TopPart != None || MidPart != None || BottomPart != None) ? Formatting.TitleDelim + Title : Title : null);
+			stringBuilder.Append(!string.IsNullOrEmpty(Title) ? (TopPart != None || MidPart != None || BottomPart != None) ? rules.TitleDelim + Title : Title : null);
 			Attributes.AppendTo(stringBuilder, rules);
 			stringBuilder.Append(Suffix);
 			return stringBuilder;
@@ -335,11 +335,20 @@
 			return 0;
 		}
 		/// <summary>
-		/// Parses a string as a PartName.
+		/// Parses a string as a PartName, using <see cref="NameRules.Default"/>.
 		/// </summary>
 		/// <param name="s">The string to parse</param>
 		/// <param name="name">The parsed name</param>
 		public static bool TryParse(in ReadOnlySpan<char> s, [NotNullWhen(true)] out PartName? name)
+		{
+			return TryParse(s, NameRules.Default, out name);
+		}
+		/// <summary>
+		/// Parses a string as a PartName.
+		/// </summary>
+		/// <param name="s">The string to parse</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> s, NameRules rules, [NotNullWhen(true)] out PartName? name)
 		{
 			name = null;
 			if (s.Length == 0)
@@ -357,7 +366,7 @@
 			int i = 0;
 			char c = s[0];
 			// 1st
-			if (c == Formatting.PartDelim)
+			if (c == rules.PartDelim)
 			{
 				from = i + 1;
 				// The is only a Toppart if the next character is a digit, otherwise it isn't
@@ -384,7 +393,7 @@
 			}
 			c = s[i];
 			// 2nd
-			if (c == Formatting.PartDelim)
+			if (c == rules.PartDelim)
 			{
 				from = i + 1;
 				// The is only an episode if the next character is a digit, otherwise it isn't
@@ -411,7 +420,7 @@
 			}
 			c = s[i];
 			// 3rd
-			if (c == Formatting.PartDelim)
+			if (c == rules.PartDelim)
 			{
 				from = i + 1;
 				// The is only a part if the next character is a digit, otherwise it isn't
@@ -444,7 +453,7 @@
 			}
 
 			name = new PartName(null, first, second, third, string.Empty, Attributes.Empty);
-			if (!Parsing.ParseTitleAttributeSuffixFragment(s.Slice(i), name))
+			if (!Parsing.ParseTitleAttributeSuffixFragment(s.Slice(i), rules, name))
 			{
 				return false;
 			}

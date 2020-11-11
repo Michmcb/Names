@@ -4,85 +4,66 @@
 	using System.Collections.Generic;
 	using System.Diagnostics.CodeAnalysis;
 	using System.Text;
-	public sealed class Attributes : IAttributes
+
+	/// <summary>
+	/// Attributes tailored towards describing music
+	/// </summary>
+	public class MusicAttributes : IAttributes
 	{
 		/// <summary>
-		/// Singleton instance which will produce nothing when turned into a string
+		/// 0/2, when neutral. This is the default.
 		/// </summary>
-		public static readonly Attributes Empty = new Attributes();
+		public const char Fav_None = '\0';
 		/// <summary>
-		/// If false, this will write an empty string.
-		/// If true, this will always at least produce {}
+		/// 1/2, when liked.
 		/// </summary>
-		private readonly bool isEmpty;
-		private Attributes()
-		{
-			isEmpty = true;
-		}
+		public const char Fav_Liked = '1';
 		/// <summary>
-		/// Creates a copy of <paramref name="attributes"/>.
+		/// 2/2, for favourites.
 		/// </summary>
-		public Attributes(Attributes attributes)
-		{
-			Author = attributes.Author;
-			Group = attributes.Group;
-			Favourite = attributes.Favourite;
-			Person = attributes.Person;
-			Tags = attributes.Tags;
-			Variation = attributes.Variation;
-			AttentionRequired = attributes.AttentionRequired;
-		}
+		public const char Fav_Favourite = '2';
 		/// <summary>
 		/// Creates a copy of <paramref name="attributes"/>. Any additional parameters override the properties of <paramref name="attributes"/>.
 		/// </summary>
-		public Attributes(Attributes attributes, string? author = null, string? group = null, DateTime? dateTime = default, char favourite = default, string? person = null, string? tags = null, string? variation = null, bool z = false)
+		public MusicAttributes(MusicAttributes attributes, string? artist = null, string? album = null, DateTime? dateTime = default, char favourite = default, string? tags = null, string? variation = null, bool attentionRequired = false)
 		{
-			Author = author ?? attributes.Author;
-			Group = group ?? attributes.Group;
+			Artist = artist ?? attributes.Artist;
+			Album = album ?? attributes.Album;
 			DateTime = dateTime ?? attributes.DateTime;
 			Favourite = favourite != '\0' ? favourite : attributes.Favourite;
-			Person = person ?? attributes.Person;
 			Tags = tags ?? attributes.Tags;
 			Variation = variation ?? attributes.Variation;
-			AttentionRequired = z || attributes.AttentionRequired;
+			AttentionRequired = attentionRequired || attributes.AttentionRequired;
 		}
 		/// <summary>
 		/// Creates a new instance with the provided properties
 		/// </summary>
-		public Attributes(string? author = null, string? group = null, DateTime dateTime = default, char favourite = default, string? person = null, string? tags = null, string? variation = null, bool z = false)
+		public MusicAttributes(string? artist = null, string? album = null, DateTime dateTime = default, char favourite = default, string? tags = null, string? variation = null, bool attentionRequired = false)
 		{
-			Author = author;
-			Group = group;
+			Artist = artist;
+			Album = album;
 			DateTime = dateTime;
 			Favourite = favourite;
-			Person = person;
 			Tags = tags;
 			Variation = variation;
-			AttentionRequired = z;
+			AttentionRequired = attentionRequired;
 		}
+		public string? Artist { get; }
+		public string? Album { get; }
 		/// <summary>
-		/// Author or creator
+		/// When this piece of music was released or published.
 		/// </summary>
-		public string? Author { get; }
-		/// <summary>
-		/// Part of a collective group
-		/// </summary>
-		public string? Group { get; }
 		public DateTime DateTime { get; }
 		/// <summary>
-		/// A char denoting a degree of favouritism
+		/// A single char denoting how liked this is. When it is \0 (null), it will not be written.
 		/// </summary>
 		public char Favourite { get; }
 		/// <summary>
-		/// Related to a particular person or persons
-		/// </summary>
-		public string? Person { get; }
-		/// <summary>
-		/// Identifies certain things this contains
+		/// Tags/Genres.
 		/// </summary>
 		public string? Tags { get; }
 		/// <summary>
-		/// Is a variation of the original
+		/// Can be used to denote that this is a variation of an original piece of music.
 		/// </summary>
 		public string? Variation { get; }
 		/// <summary>
@@ -95,10 +76,6 @@
 		/// <returns>The attributes as a string.</returns>
 		public override string ToString()
 		{
-			if (isEmpty)
-			{
-				return string.Empty;
-			}
 			StringBuilder sb = new StringBuilder();
 			AppendTo(sb, NameRules.Default);
 			return sb.ToString();
@@ -110,10 +87,6 @@
 		/// <returns>The attributes as a string.</returns>
 		public string ToString(NameRules rules)
 		{
-			if (isEmpty)
-			{
-				return string.Empty;
-			}
 			StringBuilder sb = new StringBuilder();
 			AppendTo(sb, rules);
 			return sb.ToString();
@@ -122,13 +95,10 @@
 		/// Returns this as a string, using <paramref name="rules"/>. The string will have <paramref name="prefix"/> prepended to it.
 		/// </summary>
 		/// <param name="rules">The rules to use to format these attributes.</param>
+		/// <param name="prefix">A string to prefix these attributes with.</param>
 		/// <returns>The attributes as a string.</returns>
 		public string ToString(NameRules rules, in ReadOnlySpan<char> prefix)
 		{
-			if (isEmpty)
-			{
-				return string.Empty;
-			}
 			StringBuilder sb = new StringBuilder();
 			sb.Append(prefix);
 			AppendTo(sb, rules);
@@ -137,7 +107,7 @@
 		/// <summary>
 		/// Appends this as a string to <paramref name="sb"/>, using <see cref="NameRules.Default"/>.
 		/// </summary>
-		/// <param name="sb">The StringBuilder to which the resultant string is appended</param>
+		/// <param name="sb">The StringBuilder to which the resultant string is appended.</param>
 		/// <returns><paramref name="sb"/></returns>
 		public StringBuilder AppendTo(StringBuilder sb)
 		{
@@ -146,16 +116,14 @@
 		/// <summary>
 		/// Appends this as a string to <paramref name="sb"/>, using <paramref name="rules"/>.
 		/// </summary>
-		/// <param name="sb">The StringBuilder to which the resultant string is appended</param>
+		/// <param name="sb">The StringBuilder to which the resultant string is appended.</param>
+		/// <param name="rules">The rules to use.</param>
 		/// <returns><paramref name="sb"/></returns>
 		public StringBuilder AppendTo(StringBuilder sb, NameRules rules)
 		{
-			if (!isEmpty)
-			{
-				sb.Append(rules.AttributeStart);
-				sb.AppendJoin(rules.AttributeDelim, ProduceAttributeFragments(rules));
-				sb.Append(rules.AttributeEnd);
-			}
+			sb.Append(rules.AttributeStart);
+			sb.AppendJoin(rules.AttributeDelim, ProduceAttributeFragments(rules));
+			sb.Append(rules.AttributeEnd);
 			return sb;
 		}
 		/// <summary>
@@ -166,21 +134,21 @@
 		/// <returns></returns>
 		public IEnumerable<string> ProduceAttributeFragments(NameRules rules)
 		{
-			if (!string.IsNullOrEmpty(Author))
+			if (!string.IsNullOrEmpty(Artist))
 			{
-				yield return "a=" + Author;
+				yield return "a=" + Artist;
 			}
-			if (!string.IsNullOrEmpty(Group))
+			if (!string.IsNullOrEmpty(Album))
 			{
-				yield return "b=" + Group;
+				yield return "b=" + Album;
 			}
 			if (DateTime != default)
 			{
 				yield return "d=" + DateTime.ToString(rules.DateFormat);
 			}
-			if (!string.IsNullOrEmpty(Person))
+			if (Favourite != Fav_None)
 			{
-				yield return "p=" + Person;
+				yield return "f=" + Favourite;
 			}
 			if (!string.IsNullOrEmpty(Tags))
 			{
@@ -196,39 +164,40 @@
 			}
 		}
 		/// <summary>
-		/// Propogates the attributes of this to <paramref name="other"/>, creating a new Attributes object.
+		/// Propogates the properties of this to <paramref name="other"/>, creating a new <see cref="MusicAttributes"/> object.
 		/// It's like inheritance; the values of <paramref name="other"/> are chosen, unless they are null (or default for value types)
 		/// </summary>
-		public Attributes Propogate(Attributes other)
+		public MusicAttributes Propogate(MusicAttributes other)
 		{
-			return new Attributes(other, Author, Group, DateTime, Favourite, Person, Tags, Variation, AttentionRequired);
+			return new MusicAttributes(other, Artist, Album, DateTime, Favourite, Tags, Variation, AttentionRequired);
 		}
 		/// <summary>
 		/// Attempts to parse <paramref name="str"/> as an attributes string.
 		/// </summary>
 		/// <param name="str">The string to parse.</param>
+		/// <param name="rules">The rules to use when parsing.</param>
 		/// <param name="attributes">The attributes parsed.</param>
 		/// <returns>True if successful, false otherwise.</returns>
-		public static bool TryParse(in ReadOnlySpan<char> str, NameRules rules, [NotNullWhen(true)] out Attributes? attributes)
+		public static bool TryParse(in ReadOnlySpan<char> str, NameRules rules, [NotNullWhen(true)] out MusicAttributes? attributes)
 		{
-			// Empty string means no attributes should be set
-			if (Parsing.IsEmptyOrWhiteSpace(str))
+			// Empty string shouldn't ever happen
+			if (str.IsEmpty || str.IsWhiteSpace())
 			{
-				attributes = Empty;
-				return true;
+				attributes = null;
+				return false;
 			}
 			string? author = null;
 			string? group = null;
 			DateTime dateTime = default;
-			string? person = null;
 			string? tags = null;
 			string? variation = null;
+			char favourite = Fav_None;
 			bool z = false;
 			bool outcome = true;
 
 			Parsing.ForEachToken(str, rules.AttributeDelim, (in ReadOnlySpan<char> token, ref bool go) =>
 			{
-				// Make sure that there's actually 2 more chars to parse as the separator and the value. If not, skip this one
+				// Make sure that there's actually 2 more chars to parse as the separator and the value. If not, bomb out
 				if (token.Length < 2)
 				{
 					go = false;
@@ -253,8 +222,8 @@
 								outcome = false;
 							}
 							break;
-						case 'p':
-							person = new string(token.Slice(2));
+						case 'f':
+							favourite = token[2];
 							break;
 						case 't':
 							tags = new string(token.Slice(2));
@@ -276,7 +245,7 @@
 
 			if (outcome)
 			{
-				attributes = new Attributes(author, group, dateTime, person, tags, variation, z);
+				attributes = new MusicAttributes(author, group, dateTime, favourite, tags, variation, z);
 				return true;
 			}
 			else

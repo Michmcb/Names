@@ -14,10 +14,6 @@
 		/// </summary>
 		public const char PartDelim = '~';
 		/// <summary>
-		/// The character that precedes a date
-		/// </summary>
-		public const char DateStart = '@';
-		/// <summary>
 		/// The character that separates Year, Month, Day from eachother, and Hour, Minute, Second from eachother (yyyy-MM-ddTHH-mm-ss)
 		/// </summary>
 		public const char TimeUnitDelim = '-';
@@ -25,8 +21,6 @@
 		/// Delimits the Year, Month, Day from the Hour, Minute, Second (yyyy-MM-ddTHH-mm-ss)
 		/// </summary>
 		public const char DateAndTimeDelim = 'T';
-
-		// General
 		/// <summary>
 		/// The character that signifies the beginning of an Attribute string, after Title but before Suffix
 		/// </summary>

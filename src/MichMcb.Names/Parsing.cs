@@ -1,102 +1,116 @@
 ﻿namespace MichMcb.Names
 {
 	using System;
+
 	/// <summary>
 	/// Parses stuff
 	/// </summary>
 	public static class Parsing
 	{
+		public static bool ParseName<TName, TAttributes>(in ReadOnlySpan<char> str, NameRules rules, ParseName<TName, TAttributes> pn, ParseAttributes<TAttributes> pa, out TName name)
+			where TName : IName<TAttributes>
+			where TAttributes : class, IAttributes
+		{
+			if (pn(str, rules, out name))
+			{
+				if (pa(str, rules, out TAttributes attributes))
+				{
+				}
+			}
+			name = null;
+			return false;
+		}
+
+
 		/// <summary>
-		/// Callback to help iterate through series of spans (since you can't yield ref structs)
-		/// </summary>
-		/// <param name="str">The span</param>
-		/// <param name="go">Set to false to stop</param>
-		public delegate void SpanString(in ReadOnlySpan<char> str, ref bool go);
-		/// <summary>
-		/// Parses a DateTime fragment
+		/// Parses a DateTime fragment, ordered year month day hour minute second, with the provided delimiters.
+		/// Will accept any number of year/month/day/hour/minute/second, so long as they are in order.
+		/// For example yyyy-MM is valid, and so is yyyy-MM-dd.
+		/// The kind is set to <see cref="DateTimeKind.Local"/>.
 		/// </summary>
 		/// <param name="str">The string containing the DateTime fragment to parse</param>
 		/// <param name="dateTime">If successful, the parsed DateTime. Otherwise, DateTime.MinValue</param>
-		public static bool ParseDateTimeFragment(in ReadOnlySpan<char> str, out DateTime dateTime)
+		public static bool ParseDateTimeExtended(in ReadOnlySpan<char> str, NameRules rules, out DateTime dateTime)
 		{
 			dateTime = DateTime.MinValue;
 			// The order HAS to be year, month, day, hour, minute, second.
 			int month = 1, day = 1, hour = 0, minute = 0, second = 0;
-			// The reason why I'm using goto here is because I didn't want to indent this like crazy and have a huge "Arrow" code.
+			// I'm using goto here is because I didn't want to indent this like crazy and have a huge "Arrow" code.
 			int startFrom = 0;
 
 			// Year; 4 chars
 			if (str.Length < startFrom + 4)
 			{
-				return false;
+				return false;// return "A least a year is required";
 			}
 			if (!int.TryParse(str.Slice(startFrom, 4), out int year))
 			{
-				return false;
+				return false;// return "Year was not a valid integer";
 			}
 			// Month; delimiter and 2 chars
-			if (str.Length < startFrom + 6 || (str[startFrom + 4] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 6 || (str[startFrom + 4] != rules.TimeUnitDelim))
 			{
 				goto doneParsingDate;
 			}
 			if (!int.TryParse(str.Slice(startFrom + 5, 2), out month))
 			{
-				return false;
+				return false;// return "Month was not a valid integer";
 			}
 			// Day; delimiter and 2 chars
-			if (str.Length < startFrom + 9 || (str[startFrom + 7] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 9 || (str[startFrom + 7] != rules.TimeUnitDelim))
 			{
 				goto doneParsingDate;
 			}
 			if (!int.TryParse(str.Slice(startFrom + 8, 2), out day))
 			{
-				return false;
+				return false;// return "Day was not a valid integer";
 			}
 			// Hour; delimiter and 2 chars
-			if (str.Length < startFrom + 12 || (str[startFrom + 10] != Formatting.DateAndTimeDelim))
+			if (str.Length < startFrom + 12 || (str[startFrom + 10] != rules.DateAndTimeDelim))
 			{
 				goto doneParsingDate;
 			}
 			if (!int.TryParse(str.Slice(startFrom + 11, 2), out hour))
 			{
-				return false;
+				return false;// return "Hour was not a valid integer";
 			}
 			// Minute; delimiter and 2 chars
-			if (str.Length < startFrom + 15 || (str[startFrom + 13] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 15 || (str[startFrom + 13] != rules.TimeUnitDelim))
 			{
 				goto doneParsingDate;
 			}
 			if (!int.TryParse(str.Slice(startFrom + 14, 2), out minute))
 			{
-				return false;
+				return false;// return "Minute was not a valid integer";
 			}
 			// Second; delimiter and 2 chars
-			if (str.Length < startFrom + 18 || (str[startFrom + 16] != Formatting.TimeUnitDelim))
+			if (str.Length < startFrom + 18 || (str[startFrom + 16] != rules.TimeUnitDelim))
 			{
 				goto doneParsingDate;
 			}
 			if (!int.TryParse(str.Slice(startFrom + 17, 2), out second))
 			{
-				return false;
+				return false;// return "Month was not a valid integer";
 			}
-
+			
+			// TODO make sure things are in the allowable range
 		doneParsingDate:
 			dateTime = new DateTime(year, month, day, hour, minute, second, DateTimeKind.Local);
-			return true;
+			return true;// return string.Empty;
 		}
 		/// <summary>
 		/// Parses a string fragment to extract a Title, Attributes, and Suffix.
 		/// These are then set on <paramref name="name"/>
 		/// </summary>
-		public static bool ParseTitleAttributeSuffixFragment(in ReadOnlySpan<char> str, IName name)
+		public static bool ParseTitleAttributeSuffixFragment<TAttributes>(in ReadOnlySpan<char> str, NameRules rules, Name<TAttributes> name) where TAttributes : class, IAttributes
 		{
 			int i = 0;
 			char c = str[i];
 			// Now, there are a few different ways things can go. There can be any of a title, attributes, and suffix; all are optional.
-			int attribStart = str.IndexOf(Formatting.AttributeStart);
-			int attribEnd = attribStart != -1 ? str.IndexOf(Formatting.AttributeEnd, attribStart) : -1;
+			int attribStart = str.IndexOf(rules.AttributeStart);
+			int attribEnd = attribStart != -1 ? str.IndexOf(rules.AttributeEnd, attribStart) : -1;
 			// Suffixes come after attributes, so doing from the end lets us have suffix characters in the title
-			int suffixStart = str.LastIndexOf(Formatting.SuffixDelimiter);
+			int suffixStart = str.LastIndexOf(rules.SuffixDelimiter);
 
 			// Suffix should only be allowed to start AFTER the attributes end. If it appears before the attributes, set it to -1, as if it wasn't there, and assume the name has no suffix.
 			if (suffixStart < attribEnd)
@@ -106,7 +120,7 @@
 
 			// We SHOULD see the delimiter if we found any volume, episode, or part. But if we didn't, and thus we're at the start of the string still, then that's where the title starts
 			int to;
-			if ((i > 0 && c == Formatting.TitleDelim) || (i == 0 && c != Formatting.TitleDelim))
+			if ((i > 0 && c == rules.TitleDelim) || (i == 0 && c != rules.TitleDelim))
 			{
 				to = attribStart == -1 || suffixStart == -1 ? Math.Max(attribStart, suffixStart) : Math.Min(attribStart, suffixStart);
 
@@ -118,7 +132,7 @@
 				else
 				{
 					name.Title = new string(str[(i > 0 ? i + 1 : i)..]);
-					name.Attributes = Attributes.Empty;
+					name.Attributes = null;
 					return true;
 				}
 			}
@@ -134,7 +148,7 @@
 					{
 						return false;
 					}
-					if (Attributes.TryParse(str[(attribStart + 1)..to], out Attributes? attributes))
+					if (TAttributes.TryParse(str[(attribStart + 1)..to], rules, out Attributes? attributes))
 					{
 						name.Attributes = attributes;
 					}
@@ -150,7 +164,7 @@
 			}
 			else
 			{
-				name.Attributes = Attributes.Empty;
+				name.Attributes = null;
 			}
 
 			if (suffixStart != -1)
@@ -166,6 +180,7 @@
 		/// <param name="offset">First index to start searching from</param>
 		public static int IndexOfNonDigit(in ReadOnlySpan<char> s, int offset)
 		{
+			// TODO just use slice and indexof
 			for (int i = offset; i < s.Length; i++)
 			{
 				// Find the first char not between

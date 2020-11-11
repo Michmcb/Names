@@ -3,33 +3,95 @@
 	using System;
 	using System.Diagnostics.CodeAnalysis;
 	using System.Text;
+
 	/// <summary>
-	/// Represents a single Name, with only a Title, Attributes, and Suffix.
+	/// Represents a single name with attributes
 	/// </summary>
-	public sealed class Name : IEquatable<Name>, IName
+	/// <typeparam name="TAttributes"></typeparam>
+	public sealed class Name<TAttributes> : Name, IName<TAttributes> where TAttributes : class, IAttributes
+	{
+		/// <summary>
+		/// The Attributes
+		/// </summary>
+		public TAttributes? Attributes { get; set; }
+		/// <summary>
+		/// Creates a new instance with a null title, null attributes, and empty suffix
+		/// </summary>
+		public Name() : this(null, string.Empty, null) { }
+		/// <summary>
+		/// Creates a new instance with the provided parameters.
+		/// </summary>
+		public Name(string? title, string suffix, TAttributes? attributes)
+		{
+			Title = title;
+			Suffix = suffix;
+			Attributes = attributes;
+		}
+		/// <summary>
+		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using the provided <paramref name="rules"/>.
+		/// </summary>
+		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
+		/// <param name="rules">The rules to use</param>
+		/// <returns><paramref name="stringBuilder"/></returns>
+		public override StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
+		{
+			stringBuilder.Append(Title);
+			Attributes?.AppendTo(stringBuilder, rules);
+			stringBuilder.Append(Suffix);
+			return stringBuilder;
+		}
+		/// <summary>
+		/// Parses a string as a Name, using <see cref="NameRules.Default"/>.
+		/// </summary>
+		/// <param name="s">The string to parse</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> s, [NotNullWhen(true)] out Name<TAttributes>? name)
+		{
+			return TryParse(s, NameRules.Default, out name);
+		}
+		/// <summary>
+		/// Parses a string as a Name.
+		/// </summary>
+		/// <param name="s">The string to parse</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> s, NameRules rules, [NotNullWhen(true)] out Name<TAttributes>? name)
+		{
+			name = null;
+			if (Parsing.IsEmptyOrWhiteSpace(s))
+			{
+				return false;
+			}
+
+			name = new Name<TAttributes>(null, string.Empty, null);
+			if (Parsing.ParseTitleAttributeSuffixFragment(s, rules, name))
+			{
+				return true;
+			}
+			return false;
+		}
+	}
+	/// <summary>
+	/// Represents a single Name, with only a Title and Suffix.
+	/// </summary>
+	public class Name : IEquatable<Name>, IName
 	{
 		/// <summary>
 		/// The Title
 		/// </summary>
 		public string? Title { get; set; }
 		/// <summary>
-		/// The Attributes
-		/// </summary>
-		public Attributes Attributes { get; set; }
-		/// <summary>
 		/// The Suffix that will get appended to this Name on invoking .ToString()
 		/// </summary>
 		public string Suffix { get; set; }
 		/// <summary>
-		/// Creates a new instance with a null title, empty suffix, and empty Attributes (<see cref="Attributes.Empty"/>)
+		/// Creates a new instance with a null title and empty suffix
 		/// </summary>
-		public Name() : this(null, string.Empty, Attributes.Empty) { }
+		public Name() : this(null, string.Empty) { }
 		/// <summary>
 		/// Creates a new instance with the provided parameters.
 		/// </summary>
-		public Name(string? title, string suffix, Attributes attributes)
+		public Name(string? title, string suffix)
 		{
-			Attributes = attributes;
 			Title = title;
 			Suffix = suffix;
 		}
@@ -77,10 +139,9 @@
 		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
 		/// <param name="rules">The rules to use</param>
 		/// <returns><paramref name="stringBuilder"/></returns>
-		public StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
+		public virtual StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
 		{
 			stringBuilder.Append(Title);
-			Attributes.AppendTo(stringBuilder, rules);
 			stringBuilder.Append(Suffix);
 			return stringBuilder;
 		}
@@ -97,7 +158,7 @@
 				return false;
 			}
 
-			name = new Name(null, string.Empty, Attributes.Empty);
+			name = new Name(null, string.Empty);
 			if (Parsing.ParseTitleAttributeSuffixFragment(s, name))
 			{
 				return true;
