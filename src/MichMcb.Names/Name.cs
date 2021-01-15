@@ -5,96 +5,30 @@
 	using System.Text;
 
 	/// <summary>
-	/// Represents a single name with attributes
+	/// Represents a single Name, with only a Title and Suffix.
 	/// </summary>
-	/// <typeparam name="TAttributes"></typeparam>
-	public sealed class Name<TAttributes> : Name, IName<TAttributes> where TAttributes : class, IAttributes
+	public class Name : IComparable, IComparable<Name>, IEquatable<Name>, IName
 	{
 		/// <summary>
-		/// The Attributes
+		/// Creates a new instance with a null title and empty suffix
 		/// </summary>
-		public TAttributes? Attributes { get; set; }
-		/// <summary>
-		/// Creates a new instance with a null title, null attributes, and empty suffix
-		/// </summary>
-		public Name() : this(null, string.Empty, null) { }
+		public Name() : this(string.Empty, string.Empty) { }
 		/// <summary>
 		/// Creates a new instance with the provided parameters.
 		/// </summary>
-		public Name(string? title, string suffix, TAttributes? attributes)
+		public Name(string title, string suffix)
 		{
 			Title = title;
 			Suffix = suffix;
-			Attributes = attributes;
 		}
-		/// <summary>
-		/// Writes this Name as a string, to <paramref name="stringBuilder"/>, using the provided <paramref name="rules"/>.
-		/// </summary>
-		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
-		/// <param name="rules">The rules to use</param>
-		/// <returns><paramref name="stringBuilder"/></returns>
-		public override StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
-		{
-			stringBuilder.Append(Title);
-			Attributes?.AppendTo(stringBuilder, rules);
-			stringBuilder.Append(Suffix);
-			return stringBuilder;
-		}
-		/// <summary>
-		/// Parses a string as a Name, using <see cref="NameRules.Default"/>.
-		/// </summary>
-		/// <param name="s">The string to parse</param>
-		/// <param name="name">The parsed name</param>
-		public static bool TryParse(in ReadOnlySpan<char> s, [NotNullWhen(true)] out Name<TAttributes>? name)
-		{
-			return TryParse(s, NameRules.Default, out name);
-		}
-		/// <summary>
-		/// Parses a string as a Name.
-		/// </summary>
-		/// <param name="s">The string to parse</param>
-		/// <param name="name">The parsed name</param>
-		public static bool TryParse(in ReadOnlySpan<char> s, NameRules rules, [NotNullWhen(true)] out Name<TAttributes>? name)
-		{
-			name = null;
-			if (Parsing.IsEmptyOrWhiteSpace(s))
-			{
-				return false;
-			}
-
-			name = new Name<TAttributes>(null, string.Empty, null);
-			if (Parsing.ParseTitleAttributeSuffixFragment(s, rules, name))
-			{
-				return true;
-			}
-			return false;
-		}
-	}
-	/// <summary>
-	/// Represents a single Name, with only a Title and Suffix.
-	/// </summary>
-	public class Name : IEquatable<Name>, IName
-	{
 		/// <summary>
 		/// The Title
 		/// </summary>
-		public string? Title { get; set; }
+		public string Title { get; set; }
 		/// <summary>
 		/// The Suffix that will get appended to this Name on invoking .ToString()
 		/// </summary>
 		public string Suffix { get; set; }
-		/// <summary>
-		/// Creates a new instance with a null title and empty suffix
-		/// </summary>
-		public Name() : this(null, string.Empty) { }
-		/// <summary>
-		/// Creates a new instance with the provided parameters.
-		/// </summary>
-		public Name(string? title, string suffix)
-		{
-			Title = title;
-			Suffix = suffix;
-		}
 		/// <summary>
 		/// Turns this Name into a string using rules <see cref="NameRules.Default"/>.
 		/// </summary>
@@ -146,50 +80,26 @@
 			return stringBuilder;
 		}
 		/// <summary>
-		/// Parses a string as a Name.
+		/// Equality based on <see cref="Title"/>.
 		/// </summary>
-		/// <param name="s">The string to parse</param>
-		/// <param name="name">The parsed name</param>
-		public static bool TryParse(in ReadOnlySpan<char> s, [NotNullWhen(true)] out Name? name)
+		public static bool operator ==(Name? lhs, Name? rhs) => lhs is null ? rhs is null : lhs.Equals(rhs); // Returns true if both are null, otherwise calls Equals
+		/// <summary>
+		/// Equality based on <see cref="Title"/>\.
+		/// </summary>
+		public static bool operator !=(Name? lhs, Name? rhs) => !(lhs == rhs);
+		/// <summary>
+		/// Compares based on <see cref="Title"/>.
+		/// </summary>
+		public int CompareTo(Name? other)
 		{
-			name = null;
-			if (Parsing.IsEmptyOrWhiteSpace(s))
-			{
-				return false;
-			}
-
-			name = new Name(null, string.Empty);
-			if (Parsing.ParseTitleAttributeSuffixFragment(s, name))
-			{
-				return true;
-			}
-			return false;
+			return other is null ? 1 : string.Compare(Title, other.Title);
 		}
 		/// <summary>
-		/// Equality based on <see cref="Title"/>
+		/// Compares based on <see cref="Title"/>.
 		/// </summary>
-		public static bool operator ==(Name? lhs, Name? rhs)
+		public virtual int CompareTo(object? obj)
 		{
-			// Check for null on left side.
-			if (lhs is null)
-			{
-				if (rhs is null)
-				{
-					// null == null = true.
-					return true;
-				}
-
-				// Only lhs is null.
-				return false;
-			}
-			return lhs.Equals(rhs);
-		}
-		/// <summary>
-		/// Inequality based on <see cref="Title"/>
-		/// </summary>
-		public static bool operator !=(Name? lhs, Name? rhs)
-		{
-			return !(lhs == rhs);
+			return obj is Name name ? CompareTo(name) : throw new ArgumentException("Not a " + nameof(Name));
 		}
 		/// <summary>
 		/// Equality based on <see cref="Title"/>
@@ -206,11 +116,7 @@
 			{
 				return true;
 			}
-			if (obj is Name rhs)
-			{
-				return Title == rhs.Title;
-			}
-			return false;
+			return obj is Name rhs ? Title == rhs.Title : false;
 		}
 		/// <summary>
 		/// Equality based on <see cref="Title"/>
@@ -236,6 +142,60 @@
 		public override int GetHashCode()
 		{
 			return HashCode.Combine(Title);
+		}
+		/// <summary>
+		/// Parses a string as a <see cref="Name"/>, using <see cref="NameRules.Default"/>.
+		/// </summary>
+		/// <param name="s">The string to parse</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> s, [NotNullWhen(true)] out Name? name)
+		{
+			return TryParse(s, NameRules.Default, out name);
+		}
+		/// <summary>
+		/// Parses a string as a <see cref="Name"/>.
+		/// </summary>
+		/// <param name="str">The string to parse</param>
+		/// <param name="rules">The rules to use when parsing</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> str, NameRules rules, [NotNullWhen(true)] out Name? name)
+		{
+			if (!Parsing.FindParts(str, rules, out Range rt, out Range ra, out Range rs))
+			{
+				name = null;
+				return false;
+			}
+
+			name = new Name(new string(str[rt]), new string(str[rs]));
+			return true;
+		}
+		/// <summary>
+		/// Parses a string as a <see cref="Name"/>, using <see cref="NameRules.Default"/>.
+		/// </summary>
+		/// <param name="s">The string to parse</param>
+		/// <param name="pn">The callback to parse the attributes</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> s, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out Name<TAttributes>? name) where TAttributes : IAttributes
+		{
+			return TryParse(s, NameRules.Default, pn, out name);
+		}
+		/// <summary>
+		/// Parses a string as a <see cref="Name"/>.
+		/// </summary>
+		/// <param name="str">The string to parse</param>
+		/// <param name="rules">The rules to use when parsing</param>
+		/// <param name="pn">The callback to parse the attributes</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, NameRules rules, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out Name<TAttributes>? name) where TAttributes : IAttributes
+		{
+			if (!Parsing.FindParts(str, rules, out Range rt, out Range ra, out Range rs) || !pn(str[ra], rules, out TAttributes? attributes))
+			{
+				name = null;
+				return false;
+			}
+
+			name = new Name<TAttributes>(new string(str[rt]), new string(str[rs]), attributes);
+			return true;
 		}
 	}
 }

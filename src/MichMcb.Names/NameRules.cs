@@ -1,7 +1,6 @@
 ﻿namespace MichMcb.Names
 {
 	using System;
-
 	/// <summary>
 	/// Defines how things are formatted to strings
 	/// </summary>
@@ -55,11 +54,6 @@
 		/// </summary>
 		public string DateFormat { get; set; }
 		/// <summary>
-		/// The character that separates top/middle/bottom parts.
-		/// Default: ~.
-		/// </summary>
-		public char PartDelim { get; set; }
-		/// <summary>
 		/// The character that separates Year, Month, Day from eachother, and Hour, Minute, Second from eachother. e.g. the - in yyyy-MM-ddTHH-mm-ss.
 		/// Default: -.
 		/// </summary>
@@ -98,7 +92,7 @@
 		/// The function to use to parse DateTimes.
 		/// Default: <see cref="Parsing.ParseDateTimeExtended(in ReadOnlySpan{char}, NameRules, out DateTime)"/>
 		/// </summary>
-		public ParseDateTime ParseDateTime { get; set; }
+		public TryParseDateTime ParseDateTime { get; set; }
 		/// <summary>
 		/// Creates a new NameRuleSet with the rules provided.
 		/// </summary>
@@ -106,23 +100,21 @@
 		public NameRules(int topPartDigits = 2,
 			int midDigits = 2,
 			int bottomPartDigits = 2,
-			string dateFormat = Formatting.YearMonthDay,
-			char partDelim = Formatting.PartDelim,
-			char timeUnitDelim = Formatting.TimeUnitDelim,
-			char dateAndTimeDelim = Formatting.DateAndTimeDelim,
-			char attributeStart = Formatting.AttributeStart,
-			char attributeEnd = Formatting.AttributeEnd,
-			char attributeDelim = Formatting.AttributeDelim,
-			char titleDelim = Formatting.TitleDelim,
-			char suffixDelimiter = Formatting.SuffixDelimiter,
-			ParseDateTime? parseDateTime = null)
+			string dateFormat = "yyyy-MM-dd",
+			char timeUnitDelim = '-',
+			char dateAndTimeDelim = 'T',
+			char attributeStart = '{',
+			char attributeEnd = '}',
+			char attributeDelim = ';',
+			char titleDelim = ' ',
+			char suffixDelimiter = '.',
+			TryParseDateTime? parseDateTime = null)
 #pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
 		{
 			TopPartDigits = topPartDigits;
 			MidPartDigits = midDigits;
 			BottomPartDigits = bottomPartDigits;
 			DateFormat = dateFormat;
-			PartDelim = partDelim;
 			TimeUnitDelim = timeUnitDelim;
 			DateAndTimeDelim = dateAndTimeDelim;
 			AttributeStart = attributeStart;

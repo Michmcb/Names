@@ -6,22 +6,40 @@
 
 	public sealed class EmptyAttributes : IAttributes
 	{
+		/// <summary>
+		/// Appends nothing
+		/// </summary>
 		public StringBuilder AppendTo(StringBuilder sb)
 		{
 			return sb;
 		}
+		/// <summary>
+		/// Appends nothing
+		/// </summary>
 		public StringBuilder AppendTo(StringBuilder sb, NameRules rules)
 		{
 			return sb;
 		}
-		public IEnumerable<string> ProduceAttributeFragments(NameRules rules)
+		/// <summary>
+		/// Returns <see cref="string.Empty"/>.
+		/// </summary>
+		/// <returns><see cref="string.Empty"/>.</returns>
+		public override string ToString()
 		{
-			yield break;
+			return string.Empty;
 		}
+		/// <summary>
+		/// Returns <see cref="string.Empty"/>.
+		/// </summary>
+		/// <returns><see cref="string.Empty"/>.</returns>
 		public string ToString(NameRules rules)
 		{
 			return string.Empty;
 		}
+		/// <summary>
+		/// Returns <paramref name="prefix"/> as a string.
+		/// </summary>
+		/// <returns><paramref name="prefix"/> as a string.</returns>
 		public string ToString(NameRules rules, in ReadOnlySpan<char> prefix)
 		{
 			return prefix.ToString();

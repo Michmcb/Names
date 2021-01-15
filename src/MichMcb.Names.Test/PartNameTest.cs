@@ -1,7 +1,7 @@
-﻿using Xunit;
-
-namespace MichMcb.Names.Test
+﻿namespace MichMcb.Names.Test
 {
+	using Xunit;
+
 	public sealed class PartNameTest
 	{
 #pragma warning disable CS8602 // Dereference of a possibly null reference.

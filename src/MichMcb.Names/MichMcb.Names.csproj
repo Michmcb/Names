@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
     <Nullable>enable</Nullable>
-    <Version>0.1.1</Version>
+    <Version>0.2</Version>
     <PackageIcon>icon.png</PackageIcon>
     <Description>A small library I use personally to help categorize files and directories with attributes. Useful when you need to attach metadata to files/directories but don't want an extra file. Instead you can embed the metadata directly into the filename.</Description>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -12,10 +12,12 @@
     <RepositoryUrl>https://github.com/Michmcb/Names</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <PackageTags>naming metadata filename</PackageTags>
-    <PackageReleaseNotes>- Fixed a few bugs
-- Changed order of StringBuilder/NameRules for IStringable
-- NameRules DateFormat can now be changed</PackageReleaseNotes>
+    <PackageReleaseNotes>- Attributes are split up into a few separate classes
+- Allows parsing names with/without attributes
+- Title is now not nullable and will be string.Empty if none was found</PackageReleaseNotes>
 	  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	  <FileVersion>0.2.0.0</FileVersion>
+	  <AssemblyVersion>0.2.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

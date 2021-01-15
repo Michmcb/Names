@@ -3,16 +3,31 @@
 	using System;
 	using System.Diagnostics.CodeAnalysis;
 	using System.Text;
-
+	
 	/// <summary>
 	/// Represents a single Name which can contain digits indicating some sort of order.
 	/// </summary>
-	public sealed class PartName : IComparable, IComparable<PartName>, IEquatable<PartName>, IName
+	public class PartName : IComparable, IComparable<PartName>, IEquatable<PartName>, IName
 	{
 		/// <summary>
 		/// If a part is set to this value, it will be omitted when turning this into a string
 		/// </summary>
 		public const int None = -1;
+		/// <summary>
+		/// Creates a new instance with a null title, all parts set to <see cref="None"/>, empty suffix.
+		/// </summary>
+		public PartName() : this(string.Empty, None, None, None, string.Empty) { }
+		/// <summary>
+		/// Creates a new instance with the provided parameters.
+		/// </summary>
+		public PartName(string title, int topPart, int midPart, int bottomPart, string suffix)
+		{
+			TopPart = topPart;
+			MidPart = midPart;
+			BottomPart = bottomPart;
+			Suffix = suffix;
+			Title = title;
+		}
 		/// <summary>
 		/// First part
 		/// </summary>
@@ -28,46 +43,26 @@
 		/// <summary>
 		/// The Title
 		/// </summary>
-		public string? Title { get; set; }
-		/// <summary>
-		/// The Attributes
-		/// </summary>
-		public Attributes Attributes { get; set; }
+		public string Title { get; set; }
 		/// <summary>
 		/// The Suffix that will get appended to this Name on invoking .ToString()
 		/// </summary>
 		public string Suffix { get; set; }
 		/// <summary>
-		/// Creates a new instance with a null title, all parts set to <see cref="None"/>, empty suffix, and empty Attributes (<see cref="Attributes.Empty"/>)
-		/// </summary>
-		public PartName() : this(null, None, None, None, string.Empty, Attributes.Empty) { }
-		/// <summary>
-		/// Creates a new instance with the provided parameters.
-		/// </summary>
-		public PartName(string? title, int topPart, int midPart, int bottomPart, string suffix, Attributes attributes)
-		{
-			TopPart = topPart;
-			MidPart = midPart;
-			BottomPart = bottomPart;
-			Attributes = attributes;
-			Suffix = suffix;
-			Title = title;
-		}
-		/// <summary>
 		/// Turns this Name into a string using rules <see cref="NameRules.Default"/>.
 		/// </summary>
 		public override string ToString()
 		{
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new();
 			return AppendTo(sb, NameRules.Default).ToString();
 		}
 		/// <summary>
 		/// Turns this Name into a string using the provided <paramref name="rules"/>.
 		/// </summary>
 		/// <param name="rules">The rules to use</param>
-		public string ToString(NameRules rules)
+		public virtual string ToString(NameRules rules)
 		{
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new();
 			return AppendTo(sb, rules).ToString();
 		}
 		/// <summary>
@@ -76,9 +71,9 @@
 		/// </summary>
 		/// <param name="rules">The rules to use</param>
 		/// <param name="prefix">The prefix to prepend</param>
-		public string ToString(NameRules rules, in ReadOnlySpan<char> prefix)
+		public virtual string ToString(NameRules rules, in ReadOnlySpan<char> prefix)
 		{
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new();
 			sb.Append(prefix);
 			return AppendTo(sb, rules).ToString();
 		}
@@ -87,7 +82,7 @@
 		/// </summary>
 		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
 		/// <returns><paramref name="stringBuilder"/></returns>
-		public StringBuilder AppendTo(StringBuilder stringBuilder)
+		public virtual StringBuilder AppendTo(StringBuilder stringBuilder)
 		{
 			return AppendTo(stringBuilder, NameRules.Default);
 		}
@@ -97,146 +92,69 @@
 		/// <param name="stringBuilder">The StringBuilder to which the resultant string is appended.</param>
 		/// <param name="rules">The rules to use</param>
 		/// <returns><paramref name="stringBuilder"/></returns>
-		public StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
+		public virtual StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
 		{
 			if (TopPart != None)
 			{
-				stringBuilder.Append(rules.PartDelim + TopPart.ToString(rules.TopPartFormat));
+				stringBuilder.Append('~' + TopPart.ToString(rules.TopPartFormat));
 			}
 			if (MidPart != None)
 			{
-				stringBuilder.Append(rules.PartDelim + MidPart.ToString(rules.MidPartFormat));
+				stringBuilder.Append('~' + MidPart.ToString(rules.MidPartFormat));
 			}
 			if (BottomPart != None)
 			{
-				stringBuilder.Append(rules.PartDelim + BottomPart.ToString(rules.BottomPartFormat));
+				stringBuilder.Append('~' + BottomPart.ToString(rules.BottomPartFormat));
 			}
-
 			stringBuilder.Append(!string.IsNullOrEmpty(Title) ? (TopPart != None || MidPart != None || BottomPart != None) ? rules.TitleDelim + Title : Title : null);
-			Attributes.AppendTo(stringBuilder, rules);
 			stringBuilder.Append(Suffix);
 			return stringBuilder;
 		}
 		/// <summary>
 		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
 		/// </summary>
-		public static bool operator <(PartName? lhs, PartName? rhs)
-		{
-			if (!(lhs is null) && !(rhs is null))
-			{
-				return lhs.TopPart < rhs.TopPart || lhs.MidPart < rhs.MidPart || lhs.BottomPart < rhs.BottomPart;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		public static bool operator <(PartName? lhs, PartName? rhs) => !(lhs is null) && !(rhs is null) && (lhs.TopPart < rhs.TopPart || lhs.MidPart < rhs.MidPart || lhs.BottomPart < rhs.BottomPart);
+		/// <summary>
+		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// Also returns true if both are null.
+		/// </summary>
+		public static bool operator <=(PartName? lhs, PartName? rhs) => lhs is null && rhs is null || (!(lhs is null) && !(rhs is null) && (lhs.TopPart <= rhs.TopPart || lhs.MidPart <= rhs.MidPart || lhs.BottomPart <= rhs.BottomPart));
 		/// <summary>
 		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
 		/// </summary>
-		public static bool operator <=(PartName? lhs, PartName? rhs)
-		{
-			if (!(lhs is null) && !(rhs is null))
-			{
-				return lhs.TopPart <= rhs.TopPart || lhs.MidPart <= rhs.MidPart || lhs.BottomPart <= rhs.BottomPart;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		public static bool operator >(PartName? lhs, PartName? rhs) => !(lhs is null) && !(rhs is null) && (lhs.TopPart > rhs.TopPart || lhs.MidPart > rhs.MidPart || lhs.BottomPart > rhs.BottomPart);
 		/// <summary>
 		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
+		/// Also returns true if both are null.
 		/// </summary>
-		public static bool operator >(PartName? lhs, PartName? rhs)
-		{
-			if (!(lhs is null) && !(rhs is null))
-			{
-				return lhs.TopPart > rhs.TopPart || lhs.MidPart > rhs.MidPart || lhs.BottomPart > rhs.BottomPart;
-			}
-			else
-			{
-				return false;
-			}
-		}
-		/// <summary>
-		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
-		/// </summary>
-		public static bool operator >=(PartName? lhs, PartName? rhs)
-		{
-			if (!(lhs is null) && !(rhs is null))
-			{
-				return lhs.TopPart >= rhs.TopPart || lhs.MidPart >= rhs.MidPart || lhs.BottomPart >= rhs.BottomPart;
-			}
-			else
-			{
-				return false;
-			}
-		}
+		public static bool operator >=(PartName? lhs, PartName? rhs) => lhs is null && rhs is null || !(lhs is null) && !(rhs is null) && (lhs.TopPart > rhs.TopPart || lhs.MidPart > rhs.MidPart || lhs.BottomPart > rhs.BottomPart);
 		/// <summary>
 		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
 		/// </summary>
-		public static bool operator ==(PartName? lhs, PartName? rhs)
-		{
-			// Check for null on left side.
-			if (lhs is null)
-			{
-				if (rhs is null)
-				{
-					// null == null = true.
-					return true;
-				}
-
-				// Only lhs is null.
-				return false;
-			}
-			return lhs.Equals(rhs);
-		}
+		public static bool operator ==(PartName? lhs, PartName? rhs) => lhs is null ? rhs is null : lhs.Equals(rhs); // Returns true if both are null, otherwise calls Equals
 		/// <summary>
 		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
 		/// </summary>
-		public static bool operator !=(PartName? lhs, PartName? rhs)
-		{
-			return !(lhs == rhs);
-		}
+		public static bool operator !=(PartName? lhs, PartName? rhs) => !(lhs == rhs);
 		/// <summary>
 		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
 		/// </summary>
 		public int CompareTo(PartName? other)
 		{
-			if (other is null)
-			{
-				return 1;
-			}
-			else
-			{
-				if (this < other)
-				{
-					return -1;
-				}
-				else if (this > other)
-				{
-					return 1;
-				}
-				else
-				{
-					return 0;
-				}
-			}
+			return other is null
+				? 1
+				: this < other
+					? -1
+					: this > other
+						? 1
+						: 0;
 		}
 		/// <summary>
 		/// Compares based on <see cref="TopPart"/>, then <see cref="MidPart"/>, then <see cref="BottomPart"/>.
 		/// </summary>
-		public int CompareTo(object obj)
+		public virtual int CompareTo(object? obj)
 		{
-			if (obj is PartName name)
-			{
-				return CompareTo(name);
-			}
-			else
-			{
-				throw new ArgumentException("Not a " + nameof(PartName));
-			}
+			return obj is PartName name ? CompareTo(name) : throw new ArgumentException("Not a " + nameof(PartName));
 		}
 		/// <summary>
 		/// Equality based on <see cref="TopPart"/> and <see cref="MidPart"/> and <see cref="BottomPart"/>.
@@ -256,7 +174,6 @@
 			if (obj is PartName rhs)
 			{
 				// If rhs is not null, we can compare. Only equal if all numerical properties are equal.
-				// It's about twice as fast to compare each individual property, rather than use the Order variable
 				return TopPart == rhs.TopPart && MidPart == rhs.MidPart && BottomPart == rhs.BottomPart;
 			}
 			return false;
@@ -292,214 +209,144 @@
 		/// </summary>
 		public static int HowManyDigits(int n)
 		{
-			if (n > 0)
+			return n > 0
+				? n < 10 ? 1
+				: n < 100 ? 2
+				: n < 1000 ? 3
+				: n < 10000 ? 4
+				: n < 100000 ? 5
+				: n < 1000000 ? 6
+				: n < 10000000 ? 7
+				: n < 100000000 ? 8
+				: n < 1000000000 ? 9
+				: 10
+				: 0; // <0
+		}
+		/// <summary>
+		/// Parses a string as a <see cref="PartName"/>, using <see cref="NameRules.Default"/>.
+		/// </summary>
+		/// <param name="str">The string to parse</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> str, [NotNullWhen(true)] out PartName? name)
+		{
+			return TryParse(str, NameRules.Default, out name);
+		}
+		/// <summary>
+		/// Parses a string as a <see cref="PartName"/>.
+		/// </summary>
+		/// <param name="str">The string to parse</param>
+		/// <param name="rules">The rules to use when parsing</param>
+		/// <param name="name">The parsed name</param>
+		public static bool TryParse(in ReadOnlySpan<char> str, NameRules rules, [NotNullWhen(true)] out PartName? name)
+		{
+			name = null;
+			if (str.Length == 0)
 			{
-				if (n < 10)
-				{
-					return 1;
-				}
-				if (n < 100)
-				{
-					return 2;
-				}
-				if (n < 1000)
-				{
-					return 3;
-				}
-				if (n < 10000)
-				{
-					return 4;
-				}
-				if (n < 100000)
-				{
-					return 5;
-				}
-				if (n < 1000000)
-				{
-					return 6;
-				}
-				if (n < 10000000)
-				{
-					return 7;
-				}
-				if (n < 100000000)
-				{
-					return 8;
-				}
-				if (n < 1000000000)
-				{
-					return 9;
-				}
-				return 10;
+				return false;
 			}
-			return 0;
+
+			if (!TryParsePartFragment(str, rules.TitleDelim, out Range remainder, out int top, out int mid, out int bot))
+			{
+				return false;
+			}
+			ReadOnlySpan<char> remainingFrag = str[remainder];
+
+			if (Parsing.FindParts(remainingFrag, rules, out Range tr, out Range ar, out Range sr))
+			{
+				name = new PartName(new string(remainingFrag[tr]), top, mid, bot, new string(remainingFrag[sr]));
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 		/// <summary>
 		/// Parses a string as a PartName, using <see cref="NameRules.Default"/>.
 		/// </summary>
-		/// <param name="s">The string to parse</param>
+		/// <param name="str">The string to parse</param>
+		/// <param name="pn">The callback to parse the attributes</param>
 		/// <param name="name">The parsed name</param>
-		public static bool TryParse(in ReadOnlySpan<char> s, [NotNullWhen(true)] out PartName? name)
+		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out PartName<TAttributes>? name) where TAttributes : IAttributes
 		{
-			return TryParse(s, NameRules.Default, out name);
+			return TryParse(str, NameRules.Default, pn, out name);
 		}
 		/// <summary>
 		/// Parses a string as a PartName.
 		/// </summary>
-		/// <param name="s">The string to parse</param>
+		/// <param name="str">The string to parse</param>
+		/// <param name="rules">The rules to use when parsing</param>
+		/// <param name="pn">The callback to parse the attributes</param>
 		/// <param name="name">The parsed name</param>
-		public static bool TryParse(in ReadOnlySpan<char> s, NameRules rules, [NotNullWhen(true)] out PartName? name)
+		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, NameRules rules, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out PartName<TAttributes>? name) where TAttributes : IAttributes
 		{
 			name = null;
-			if (s.Length == 0)
+			if (str.Length == 0)
 			{
 				return false;
 			}
 
-			// TODO move the date parsing into here as well, allow appearing before or after the parts. It needs to start with @.
-
-			int from, to;
-			int first = None, second = None, third = None;
-
-			// Note that whenever we do our s[i], it's never past the end of the string
-			// Because if we can't find a non-digit, then we just exit straight away
-			int i = 0;
-			char c = s[0];
-			// 1st
-			if (c == rules.PartDelim)
-			{
-				from = i + 1;
-				// The is only a Toppart if the next character is a digit, otherwise it isn't
-				if (from < s.Length && s[from] >= '0' && s[from] <= '9')
-				{
-					// A Toppart maybe; start search from the next char which is a digit
-					to = Parsing.IndexOfNonDigit(s, from);
-					if (to != -1)
-					{
-						if (to - from > 9)
-						{
-							return false;
-						}
-						first = int.Parse(s[from..to]);
-						i = to;
-					}
-					else
-					{
-						first = int.Parse(s[from..]);
-						name = new PartName(null, first, None, None, string.Empty, Attributes.Empty);
-						return true;
-					}
-				}
-			}
-			c = s[i];
-			// 2nd
-			if (c == rules.PartDelim)
-			{
-				from = i + 1;
-				// The is only an episode if the next character is a digit, otherwise it isn't
-				if (from < s.Length && s[from] >= '0' && s[from] <= '9')
-				{
-					// An episode maybe; start search from the next char which is a digit
-					to = Parsing.IndexOfNonDigit(s, from);
-					if (to != -1)
-					{
-						if (to - from > 9)
-						{
-							return false;
-						}
-						second = int.Parse(s[from..to]);
-						i = to;
-					}
-					else
-					{
-						second = int.Parse(s[from..]);
-						name = new PartName(null, first, second, None, string.Empty, Attributes.Empty);
-						return true;
-					}
-				}
-			}
-			c = s[i];
-			// 3rd
-			if (c == rules.PartDelim)
-			{
-				from = i + 1;
-				// The is only a part if the next character is a digit, otherwise it isn't
-				if (from < s.Length && s[from] >= '0' && s[from] <= '9')
-				{
-					// A part maybe; start search from the next char which is a digit
-					to = Parsing.IndexOfNonDigit(s, from);
-					if (to != -1)
-					{
-						if (to - from > 9)
-						{
-							return false;
-						}
-						third = int.Parse(s[from..to]);
-						i = to;
-					}
-					else
-					{
-						third = int.Parse(s[from..]);
-						name = new PartName(null, first, second, third, string.Empty, Attributes.Empty);
-						return true;
-					}
-				}
-			}
-			// If we parsed the numbers properly, then we'll have ended on a space, so jump forwards one space
-			// If there were no numbers we'll be on the first char of the title/attributes, so no +1
-			if (s[i] == ' ')
-			{
-				++i;
-			}
-
-			name = new PartName(null, first, second, third, string.Empty, Attributes.Empty);
-			if (!Parsing.ParseTitleAttributeSuffixFragment(s.Slice(i), rules, name))
+			if (!TryParsePartFragment(str, rules.TitleDelim, out Range remainder, out int top, out int mid, out int bot))
 			{
 				return false;
+			}
+			ReadOnlySpan<char> remainingFrag = str[remainder];
+
+			if (Parsing.FindParts(remainingFrag, rules, out Range tr, out Range ar, out Range sr))
+			{
+				if (!pn(remainingFrag[ar], rules, out TAttributes? attributes))
+				{
+					return false;
+				}
+				name = new PartName<TAttributes>(new string(remainingFrag[tr]), top, mid, bot, new string(remainingFrag[sr]), attributes);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		public static bool TryParsePartFragment(in ReadOnlySpan<char> str, char titleDelim, out Range remainder, out int top, out int mid, out int bot)
+		{
+			int space = str.IndexOf(titleDelim);
+			top = None;
+			mid = None;
+			bot = None;
+			if (space <= 1)
+			{
+				remainder = default;
+				return false; // We need at least 1 digit and must actually find a space
+			}
+			remainder = (space + 1)..;
+			ReadOnlySpan<char> partFrag = str[1..space];
+
+			// We found the first squiggle so, only the 2nd and 3rd are left to find
+			int midSquig = partFrag.IndexOf('~');
+			// No more squiggles, so we only have the top part
+			if (midSquig == -1)
+			{
+				if (!int.TryParse(partFrag, out top)) return false;
+			}
+			else
+			{
+				int botSquig = partFrag.LastIndexOf('~');
+				// Being the same, that means there were only 2 squiggles
+				if (botSquig == midSquig)
+				{
+					if (midSquig == partFrag.Length - 1) return false;
+					if (!int.TryParse(partFrag[..midSquig], out top)) return false;
+					if (!int.TryParse(partFrag[(midSquig + 1)..], out mid)) return false;
+				}
+				// Otherwise we have 3 squiggles
+				else
+				{
+					if (botSquig == partFrag.Length - 1) return false;
+					if (!int.TryParse(partFrag[..midSquig], out top)) return false;
+					if (!int.TryParse(partFrag[(midSquig + 1)..botSquig], out mid)) return false;
+					if (!int.TryParse(partFrag[(botSquig + 1)..], out bot)) return false;
+				}
 			}
 			return true;
 		}
-		/// <summary>
-		/// Parses a string as a DateName, according to the rules set up by this DateNameRuleSet.
-		/// If the string does not adhere to the rules of the DateNameRuleSet, this method returns false.
-		/// </summary>
-		/// <param name="str">The string to parse</param>
-		/// <param name="name">The parsed DateName</param>
-		//public static bool Parse(in ReadOnlySpan<char> str, [NotNullWhen(true)] out DateName? name)
-		//{
-		//	name = null;
-		//	// We can have anywhere from yyyy to yyyy-MM-dd_HH-mm-ss. But at least the year is required.
-		//	if (str.Length < 4)
-		//	{
-		//		return false;
-		//	}
-		//	char c = str[0];
-		//	if (c < '0' || c > '9')
-		//	{
-		//		// At least the year is required; so if the first character isn't a digit, it's not valid
-		//		return false;
-		//	}
-		//
-		//	// Since it starts with a digit, we can assume it's most likely a DateName
-		//	if (!Parsing.ParseDateTimeFragment(str, out int i, out DateTime dateTime))
-		//	{
-		//		return false;
-		//	}
-		//
-		//	// If there's nothing more, that is fine; just return now
-		//	if (i >= str.Length)
-		//	{
-		//		name = new DateName(dateTime, null, Attributes.Empty, string.Empty);
-		//		return true;
-		//	}
-		//
-		//	// If there's something more, we need a space and then the rest of the stuff
-		//	name = new DateName(dateTime, null, Attributes.Empty, string.Empty);
-		//	if (!Parsing.ParseTitleAttributeSuffixFragment(str.Slice(i + 1), name))
-		//	{
-		//		return false;
-		//	}
-		//	return true;
-		//}
 	}
 }

@@ -8,7 +8,7 @@
 	/// <summary>
 	/// Attributes tailored towards describing music
 	/// </summary>
-	public class MusicAttributes : IAttributes
+	public sealed class MusicAttributes : IAttributes
 	{
 		/// <summary>
 		/// 0/2, when neutral. This is the default.
@@ -48,7 +48,13 @@
 			Variation = variation;
 			AttentionRequired = attentionRequired;
 		}
+		/// <summary>
+		/// The artist
+		/// </summary>
 		public string? Artist { get; }
+		/// <summary>
+		/// The album
+		/// </summary>
 		public string? Album { get; }
 		/// <summary>
 		/// When this piece of music was released or published.
@@ -121,9 +127,7 @@
 		/// <returns><paramref name="sb"/></returns>
 		public StringBuilder AppendTo(StringBuilder sb, NameRules rules)
 		{
-			sb.Append(rules.AttributeStart);
 			sb.AppendJoin(rules.AttributeDelim, ProduceAttributeFragments(rules));
-			sb.Append(rules.AttributeEnd);
 			return sb;
 		}
 		/// <summary>
@@ -131,7 +135,6 @@
 		/// Can be joined together with <see cref="NameRules.AttributeDelim"/>.
 		/// </summary>
 		/// <param name="rules"></param>
-		/// <returns></returns>
 		public IEnumerable<string> ProduceAttributeFragments(NameRules rules)
 		{
 			if (!string.IsNullOrEmpty(Artist))
@@ -174,17 +177,16 @@
 		/// <summary>
 		/// Attempts to parse <paramref name="str"/> as an attributes string.
 		/// </summary>
-		/// <param name="str">The string to parse.</param>
+		/// <param name="str">The string to parse, not including the attribute delimiters.</param>
 		/// <param name="rules">The rules to use when parsing.</param>
 		/// <param name="attributes">The attributes parsed.</param>
 		/// <returns>True if successful, false otherwise.</returns>
 		public static bool TryParse(in ReadOnlySpan<char> str, NameRules rules, [NotNullWhen(true)] out MusicAttributes? attributes)
 		{
-			// Empty string shouldn't ever happen
 			if (str.IsEmpty || str.IsWhiteSpace())
 			{
-				attributes = null;
-				return false;
+				attributes = new();
+				return true;
 			}
 			string? author = null;
 			string? group = null;
@@ -210,13 +212,13 @@
 					switch (token[0])
 					{
 						case 'a':
-							author = new string(token.Slice(2));
+							author = new string(token[2..]);
 							break;
 						case 'b':
-							group = new string(token.Slice(2));
+							group = new string(token[2..]);
 							break;
 						case 'd':
-							if (!DateTime.TryParse(token.Slice(2), out dateTime))
+							if (!rules.ParseDateTime(token[2..], rules, out dateTime))
 							{
 								go = false;
 								outcome = false;
@@ -226,10 +228,10 @@
 							favourite = token[2];
 							break;
 						case 't':
-							tags = new string(token.Slice(2));
+							tags = new string(token[2..]);
 							break;
 						case 'v':
-							variation = new string(token.Slice(2));
+							variation = new string(token[2..]);
 							break;
 						case 'z':
 							z = true;

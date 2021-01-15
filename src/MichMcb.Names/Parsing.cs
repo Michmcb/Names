@@ -3,25 +3,69 @@
 	using System;
 
 	/// <summary>
-	/// Parses stuff
+	/// Helper methods to parse stuff
 	/// </summary>
 	public static class Parsing
 	{
-		public static bool ParseName<TName, TAttributes>(in ReadOnlySpan<char> str, NameRules rules, ParseName<TName, TAttributes> pn, ParseAttributes<TAttributes> pa, out TName name)
-			where TName : IName<TAttributes>
-			where TAttributes : class, IAttributes
+		/// <summary>
+		/// Finds parts of <paramref name="str"/>, and validates that it is well formed.
+		/// </summary>
+		/// <param name="str">The string to find parts of.</param>
+		/// <param name="rules">The rules to use.</param>
+		/// <param name="title">The slice which represents the title.</param>
+		/// <param name="attributes">The slice which represents the attributes, without the AttributeStart/AttrbiuteEnd chars.</param>
+		/// <param name="suffix">The slice which represents the suffix, with leading SuffixDelimiter.</param>
+		/// <returns>true if <paramref name="str"/> is well formed, false otherwise.</returns>
+		public static bool FindParts(in ReadOnlySpan<char> str, NameRules rules, out Range title, out Range attributes, out Range suffix)
 		{
-			if (pn(str, rules, out name))
+			int attrStart = str.IndexOf(rules.AttributeStart);
+			int attrEnd = str.LastIndexOf(rules.AttributeEnd);
+			if (attrStart != -1 && attrEnd != -1)
 			{
-				if (pa(str, rules, out TAttributes attributes))
+				if (attrStart < attrEnd)
 				{
+					// We have attributes, so look for the suffix AFTER attrEnd
+					int suffixIndex = str[attrEnd..].LastIndexOf(rules.SuffixDelimiter);
+					if (suffixIndex != -1)
+					{
+						// Have attributes and a suffix
+						title = ..attrStart;
+						attributes = (attrStart + 1)..attrEnd;
+						// Because suffixIndex is relative to the slice we need to add attrEnd onto it so it's relative to input str
+						suffix = (suffixIndex + attrEnd)..;
+					}
+					else
+					{
+						// Only attributes, no suffix
+						title = ..attrStart;
+						attributes = (attrStart + 1)..attrEnd;
+						suffix = default;
+					}
+					return true;
 				}
 			}
-			name = null;
+			else
+			{
+				// Only a suffix maybe
+				int suffixIndex = str.LastIndexOf(rules.SuffixDelimiter);
+				if (suffixIndex != -1)
+				{
+					title = ..suffixIndex;
+					suffix = suffixIndex..;
+				}
+				else
+				{
+					title = ..;
+					suffix = default;
+				}
+				attributes = default;
+				return true;
+			}
+			title = default;
+			attributes = default;
+			suffix = default;
 			return false;
 		}
-
-
 		/// <summary>
 		/// Parses a DateTime fragment, ordered year month day hour minute second, with the provided delimiters.
 		/// Will accept any number of year/month/day/hour/minute/second, so long as they are in order.
@@ -29,6 +73,7 @@
 		/// The kind is set to <see cref="DateTimeKind.Local"/>.
 		/// </summary>
 		/// <param name="str">The string containing the DateTime fragment to parse</param>
+		/// <param name="rules">The rules to use when parsing</param>
 		/// <param name="dateTime">If successful, the parsed DateTime. Otherwise, DateTime.MinValue</param>
 		public static bool ParseDateTimeExtended(in ReadOnlySpan<char> str, NameRules rules, out DateTime dateTime)
 		{
@@ -37,7 +82,7 @@
 			int month = 1, day = 1, hour = 0, minute = 0, second = 0;
 			// I'm using goto here is because I didn't want to indent this like crazy and have a huge "Arrow" code.
 			int startFrom = 0;
-
+			
 			// Year; 4 chars
 			if (str.Length < startFrom + 4)
 			{
@@ -99,99 +144,6 @@
 			return true;// return string.Empty;
 		}
 		/// <summary>
-		/// Parses a string fragment to extract a Title, Attributes, and Suffix.
-		/// These are then set on <paramref name="name"/>
-		/// </summary>
-		public static bool ParseTitleAttributeSuffixFragment<TAttributes>(in ReadOnlySpan<char> str, NameRules rules, Name<TAttributes> name) where TAttributes : class, IAttributes
-		{
-			int i = 0;
-			char c = str[i];
-			// Now, there are a few different ways things can go. There can be any of a title, attributes, and suffix; all are optional.
-			int attribStart = str.IndexOf(rules.AttributeStart);
-			int attribEnd = attribStart != -1 ? str.IndexOf(rules.AttributeEnd, attribStart) : -1;
-			// Suffixes come after attributes, so doing from the end lets us have suffix characters in the title
-			int suffixStart = str.LastIndexOf(rules.SuffixDelimiter);
-
-			// Suffix should only be allowed to start AFTER the attributes end. If it appears before the attributes, set it to -1, as if it wasn't there, and assume the name has no suffix.
-			if (suffixStart < attribEnd)
-			{
-				suffixStart = -1;
-			}
-
-			// We SHOULD see the delimiter if we found any volume, episode, or part. But if we didn't, and thus we're at the start of the string still, then that's where the title starts
-			int to;
-			if ((i > 0 && c == rules.TitleDelim) || (i == 0 && c != rules.TitleDelim))
-			{
-				to = attribStart == -1 || suffixStart == -1 ? Math.Max(attribStart, suffixStart) : Math.Min(attribStart, suffixStart);
-
-				if (to != -1)
-				{
-					// If the delimiter appeared, skip it. Otherwise, keep the char we started on
-					name.Title = new string(str[(i > 0 ? i + 1 : i)..to]);
-				}
-				else
-				{
-					name.Title = new string(str[(i > 0 ? i + 1 : i)..]);
-					name.Attributes = null;
-					return true;
-				}
-			}
-
-			if (attribStart != -1)
-			{
-				// Attributes MUST be enclosed in the start/end chars
-				to = attribEnd;
-				if (to != -1)
-				{
-					// The suffix has to begin immediately after the attributes do. The reason for this is a round trip will remove those spaces
-					if (suffixStart != -1 && (suffixStart - to != 1))
-					{
-						return false;
-					}
-					if (TAttributes.TryParse(str[(attribStart + 1)..to], rules, out Attributes? attributes))
-					{
-						name.Attributes = attributes;
-					}
-					else
-					{
-						return false;
-					}
-				}
-				else
-				{
-					return false;
-				}
-			}
-			else
-			{
-				name.Attributes = null;
-			}
-
-			if (suffixStart != -1)
-			{
-				name.Suffix = new string(str[suffixStart..]);
-			}
-			return true;
-		}
-		/// <summary>
-		/// Returns the index of the first character found which is not a latin digit.
-		/// </summary>
-		/// <param name="s">The string to search</param>
-		/// <param name="offset">First index to start searching from</param>
-		public static int IndexOfNonDigit(in ReadOnlySpan<char> s, int offset)
-		{
-			// TODO just use slice and indexof
-			for (int i = offset; i < s.Length; i++)
-			{
-				// Find the first char not between
-				if (!(s[i] >= '0' && s[i] <= '9'))
-				{
-					return i;
-				}
-			}
-			return -1;
-		}
-		/// <summary>
 		/// Finds the first occurrence of <paramref name="c"/> in <paramref name="s"/>, starting search from <paramref name="offset"/>.
 		/// </summary>
 		/// <param name="s">The span to search</param>
@@ -200,19 +152,15 @@
 		/// <returns>The index of the character, or -1 if not found</returns>
 		public static int IndexOf(this in ReadOnlySpan<char> s, char c, int offset)
 		{
-			for (int i = offset; i < s.Length; i++)
-			{
-				if (s[i] == c)
-				{
-					return i;
-				}
-			}
-			return -1;
+			int i = s[offset..].IndexOf(c);
+			return i != -1 ? i + offset : -1;
 		}
-		public static bool IsEmptyOrWhiteSpace(in ReadOnlySpan<char> s)
-		{
-			return s.IsEmpty || s.IsWhiteSpace();
-		}
+		/// <summary>
+		/// Allows iteration over slices of <paramref name="str"/>, without allocating any substrings.
+		/// </summary>
+		/// <param name="str">The string to take slices of.</param>
+		/// <param name="separator">The separator.</param>
+		/// <param name="token">A callback to handle a slice.</param>
 		public static void ForEachToken(in ReadOnlySpan<char> str, char separator, SpanString token)
 		{
 			int from;
@@ -229,7 +177,7 @@
 				}
 				else
 				{
-					token(str.Slice(from), ref go);
+					token(str[from..], ref go);
 					break;
 				}
 			}
