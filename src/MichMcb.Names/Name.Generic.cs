@@ -29,7 +29,12 @@
 		public override StringBuilder AppendTo(StringBuilder stringBuilder, NameRules rules)
 		{
 			stringBuilder.Append(Title);
-			Attributes?.AppendTo(stringBuilder, rules);
+			if (Attributes != null)
+			{
+				stringBuilder.Append(rules.AttributeStart);
+				Attributes?.AppendTo(stringBuilder, rules);
+				stringBuilder.Append(rules.AttributeEnd);
+			}
 			stringBuilder.Append(Suffix);
 			return stringBuilder;
 		}

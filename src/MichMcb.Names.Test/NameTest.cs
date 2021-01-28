@@ -7,7 +7,7 @@ namespace MichMcb.Names.Test
 		[Fact]
 		public void AttributeParsing()
 		{
-			Assert.True(Name.TryParse("MyTitle{a=Author;b=Group;d=2002-12-25;f=1;p=Dude;t=abcdef;v=Variation}.suffix", MusicAttributes.TryParse, out Name<MusicAttributes>? name));
+			Assert.True(Name.TryParse("MyTitle{a=Author;b=Group;d=2002-12-25;f=1;t=abcdef;v=Variation}.suffix", MusicAttributes.TryParse, out Name<MusicAttributes>? name));
 			Assert.NotNull(name);
 
 			Assert.Equal("MyTitle", name!.Title);
@@ -19,6 +19,8 @@ namespace MichMcb.Names.Test
 			Assert.Equal('1', a.Favourite);
 			Assert.Equal("abcdef", a.Tags);
 			Assert.Equal("Variation", a.Variation);
+
+			string strName = name.ToString();
 		}
 		[Fact]
 		public void AttributeParsingEmptyTitle()

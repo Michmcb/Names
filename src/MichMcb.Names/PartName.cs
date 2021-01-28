@@ -1,18 +1,20 @@
 ﻿namespace MichMcb.Names
 {
 	using System;
+	using System.Diagnostics;
 	using System.Diagnostics.CodeAnalysis;
 	using System.Text;
 	
 	/// <summary>
-	/// Represents a single Name which can contain digits indicating some sort of order.
+	/// Represents a single Name which can contain leading digits indicating some sort of order.
+	/// The digits are like so: ~n~n~n, for top/mid/bottom parts.
 	/// </summary>
 	public class PartName : IComparable, IComparable<PartName>, IEquatable<PartName>, IName
 	{
 		/// <summary>
 		/// If a part is set to this value, it will be omitted when turning this into a string
 		/// </summary>
-		public const int None = -1;
+		public const int None = int.MinValue;
 		/// <summary>
 		/// Creates a new instance with a null title, all parts set to <see cref="None"/>, empty suffix.
 		/// </summary>
@@ -267,18 +269,19 @@
 		/// <param name="str">The string to parse</param>
 		/// <param name="pn">The callback to parse the attributes</param>
 		/// <param name="name">The parsed name</param>
-		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out PartName<TAttributes>? name) where TAttributes : IAttributes
+		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, bool partRequired, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out PartName<TAttributes>? name) where TAttributes : IAttributes
 		{
-			return TryParse(str, NameRules.Default, pn, out name);
+			return TryParse(str, partRequired, NameRules.Default, pn, out name);
 		}
 		/// <summary>
 		/// Parses a string as a PartName.
 		/// </summary>
 		/// <param name="str">The string to parse</param>
+		/// <param name="partRequired">If true, the leading ~0~1~2 is required. Otherwise it's optional.</param>
 		/// <param name="rules">The rules to use when parsing</param>
 		/// <param name="pn">The callback to parse the attributes</param>
 		/// <param name="name">The parsed name</param>
-		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, NameRules rules, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out PartName<TAttributes>? name) where TAttributes : IAttributes
+		public static bool TryParse<TAttributes>(in ReadOnlySpan<char> str, bool partRequired, NameRules rules, TryParseAttributes<TAttributes> pn, [NotNullWhen(true)] out PartName<TAttributes>? name) where TAttributes : IAttributes
 		{
 			name = null;
 			if (str.Length == 0)
@@ -286,11 +289,38 @@
 				return false;
 			}
 
-			if (!TryParsePartFragment(str, rules.TitleDelim, out Range remainder, out int top, out int mid, out int bot))
+			ReadOnlySpan<char> remainingFrag;
+			int top, mid, bot;
+			if (partRequired)
 			{
-				return false;
+				if (str[0] == '~' && TryParsePartFragment(str, rules.TitleDelim, out Range remainder, out top, out mid, out bot))
+				{
+					remainingFrag = str[remainder];
+				}
+				else
+				{
+					return false;
+				}
 			}
-			ReadOnlySpan<char> remainingFrag = str[remainder];
+			else
+			{
+				if (str[0] == '~')
+				{
+					if (TryParsePartFragment(str, rules.TitleDelim, out Range remainder, out top, out mid, out bot))
+					{
+						remainingFrag = str[remainder];
+					}
+					else
+					{
+						return false;
+					}
+				}
+				else
+				{
+					top = mid = bot = None;
+					remainingFrag = str;
+				}
+			}
 
 			if (Parsing.FindParts(remainingFrag, rules, out Range tr, out Range ar, out Range sr))
 			{
@@ -306,16 +336,20 @@
 				return false;
 			}
 		}
-		public static bool TryParsePartFragment(in ReadOnlySpan<char> str, char titleDelim, out Range remainder, out int top, out int mid, out int bot)
+		private static bool TryParsePartFragment(in ReadOnlySpan<char> str, char titleDelim, out Range remainder, out int top, out int mid, out int bot)
 		{
-			int space = str.IndexOf(titleDelim);
 			top = None;
 			mid = None;
 			bot = None;
+			int space = str.IndexOf(titleDelim);
+			// This only gets called when str[0] == '~'
+			Debug.Assert(str[0] == '~', nameof(TryParsePartFragment) + " should never get called when str does not start with a ~");
+			// We need at least 1 digit, and we have to find either the title/attribute/suffix delimiter.
+			// TODO fix this it's wrong!
 			if (space <= 1)
 			{
 				remainder = default;
-				return false; // We need at least 1 digit and must actually find a space
+				return false; 
 			}
 			remainder = (space + 1)..;
 			ReadOnlySpan<char> partFrag = str[1..space];
